@@ -1,0 +1,2032 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model alarm {
+  alarm_id        BigInt    @id @default(autoincrement())
+  content         String?   @db.VarChar(255)
+  category        String?   @db.VarChar(100)
+  receiver_id     BigInt?
+  is_read         String?   @db.Char(1)
+  is_deleted      Boolean?  @db.Bit(1)
+  created_at      DateTime? @db.DateTime(0)
+  updated_at      DateTime? @db.DateTime(0)
+  link            String?   @db.VarChar(100)
+  detail_category String?   @db.VarChar(100)
+  image           String?   @db.VarChar(255)
+  link_id         BigInt?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model alarm_failed {
+  alarm_id        BigInt    @id @default(autoincrement())
+  content         String?   @db.VarChar(255)
+  category        String?   @db.VarChar(100)
+  receiver_id     BigInt?
+  is_read         String?   @db.Char(1)
+  is_deleted      Boolean?  @db.Bit(1)
+  created_at      DateTime? @db.DateTime(0)
+  updated_at      DateTime? @db.DateTime(0)
+  link            String?   @db.VarChar(100)
+  detail_category String?   @db.VarChar(100)
+  image           String?   @db.VarChar(255)
+  link_id         BigInt?
+  error_message   String?   @db.Text
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model app_version {
+  version_id                       BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  android_latest_version           String?   @db.VarChar(80)
+  ios_latest_version               String?   @db.VarChar(80)
+  mandatory                        Boolean?  @db.Bit(1)
+  update_available                 Boolean?  @db.Bit(1)
+  critical_update                  Boolean?  @db.Bit(1)
+  release_notes                    String?   @db.VarChar(80)
+  created_at                       DateTime? @db.DateTime(6)
+  updated_at                       DateTime? @db.DateTime(6)
+  ios_latest_mandatory_version     String?   @db.VarChar(10)
+  android_latest_mandatory_version String?   @db.VarChar(10)
+}
+
+model ask {
+  id             BigInt    @id @default(autoincrement())
+  created_at     DateTime? @db.DateTime(6)
+  updated_at     DateTime? @db.DateTime(6)
+  answer         String?   @db.Text
+  question       String?   @db.Text
+  member_user_id BigInt?
+  answered_at    DateTime? @db.DateTime(0)
+
+  @@index([member_user_id], map: "FK2bbvimycvgrkdfq1vytkuttsu")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model banner_brand_home {
+  banner_id                     BigInt    @id @default(autoincrement())
+  brand_id                      BigInt?
+  brand_home_directory_original String?   @db.VarChar(120)
+  brand_home_filename_original  String?   @db.VarChar(80)
+  brand_home_fullurl_original   String?   @db.VarChar(200)
+  brand_home_directory_resized  String?   @db.VarChar(120)
+  brand_home_filename_resized   String?   @db.VarChar(80)
+  brand_home_fullurl_resized    String?   @db.VarChar(255)
+  btype                         String?   @db.VarChar(20)
+  active                        Boolean?  @db.Bit(1)
+  created_at                    DateTime? @db.DateTime(0)
+  updated_at                    DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model banner_brand_list {
+  banner_id                     BigInt    @id @default(autoincrement())
+  brand_id                      BigInt?
+  brand_list_directory_original String?   @db.VarChar(120)
+  brand_list_filename_original  String?   @db.VarChar(80)
+  brand_list_fullurl_original   String?   @db.VarChar(200)
+  brand_list_directory_resized  String?   @db.VarChar(120)
+  brand_list_filename_resized   String?   @db.VarChar(80)
+  brand_list_fullurl_resized    String?   @db.VarChar(200)
+  active                        Boolean?  @db.Bit(1)
+  created_at                    DateTime? @db.DateTime(0)
+  updated_at                    DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model banner_brand_story {
+  banner_id                      BigInt    @id @default(autoincrement())
+  brand_id                       BigInt?
+  brand_story_directory_original String?   @db.VarChar(120)
+  brand_story_filename_original  String?   @db.VarChar(80)
+  brand_story_fullurl_original   String?   @db.VarChar(200)
+  brand_story_directory_resized  String?   @db.VarChar(120)
+  brand_story_filename_resized   String?   @db.VarChar(80)
+  brand_story_fullurl_resized    String?   @db.VarChar(200)
+  sorting                        Int?
+  active                         Boolean?  @db.Bit(1)
+  created_at                     DateTime? @db.DateTime(0)
+  updated_at                     DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model banner_brand_thumbnail {
+  thumbnail_id                       BigInt    @id @default(autoincrement())
+  brand_id                           BigInt?
+  brand_thumbnail_directory_original String?   @db.VarChar(120)
+  brand_thumbnail_filename_original  String?   @db.VarChar(80)
+  brand_thumbnail_fullurl_original   String?   @db.VarChar(200)
+  brand_thumbnail_directory_resized  String?   @db.VarChar(120)
+  brand_thumbnail_filename_resized   String?   @db.VarChar(80)
+  brand_thumbnail_fullurl_resized    String?   @db.VarChar(200)
+  active                             Boolean?  @db.Bit(1)
+  created_at                         DateTime? @db.DateTime(0)
+  updated_at                         DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model banner_pick_brand {
+  banner_id                     BigInt    @id @default(autoincrement())
+  brand_id                      BigInt?
+  pick_brand_directory_original String?   @db.VarChar(120)
+  pick_brand_filename_original  String?   @db.VarChar(80)
+  pick_brand_fullurl_original   String?   @db.VarChar(200)
+  pick_brand_directory_resized  String?   @db.VarChar(120)
+  pick_brand_filename_resized   String?   @db.VarChar(80)
+  pick_brand_fullurl_resized    String?   @db.VarChar(200)
+  merchandise_id                Int?
+  active                        Boolean?  @db.Bit(1)
+  created_at                    DateTime? @db.DateTime(0)
+  updated_at                    DateTime? @db.DateTime(0)
+}
+
+model base_info {
+  id                  BigInt    @id @default(autoincrement())
+  created_at          DateTime? @db.DateTime(6)
+  updated_at          DateTime? @db.DateTime(6)
+  address             String?   @db.VarChar(255)
+  business_name       String?   @db.VarChar(255)
+  business_number     String?   @db.VarChar(255)
+  ceo                 String?   @db.VarChar(255)
+  customer_service    String?   @db.VarChar(255)
+  email               String?   @db.VarChar(255)
+  tell                String?   @db.VarChar(255)
+  online_sales_number String?   @db.VarChar(255)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model body_shape {
+  id                       BigInt    @id @default(autoincrement())
+  created_at               DateTime? @db.DateTime(6)
+  updated_at               DateTime? @db.DateTime(6)
+  creator_body_type        String?   @db.VarChar(255)
+  match_rate               String?   @db.VarChar(255)
+  member_body_type         String?   @db.VarChar(255)
+  print_text               String?   @db.VarChar(255)
+  creator_body_type_backup Int?
+  member_body_type_backup  Int?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model brand_adjustment {
+  brand_adjustment_id      BigInt    @id @default(autoincrement())
+  brand_id                 BigInt?
+  order_map_merchandise_id BigInt?
+  sales_amount             String?   @db.VarChar(100)
+  adjust_amount            String?   @db.VarChar(100)
+  charge                   Float?
+  charge_explanation       String?   @db.VarChar(100)
+  is_deleted               Boolean?  @db.Bit(1)
+  created_at               DateTime? @db.DateTime(0)
+  updated_at               DateTime? @db.DateTime(0)
+  adjust_complete_at       DateTime? @db.DateTime(0)
+}
+
+model brand_admin_user {
+  id          Int       @id @default(autoincrement())
+  username    String?   @db.VarChar(80)
+  passwd      String?   @db.VarChar(255)
+  full_name   String?   @db.VarChar(80)
+  brand_id    Int?
+  hq_user     Boolean?
+  created_by  Int?
+  created_at  DateTime? @db.DateTime(0)
+  updated_by  Int?
+  updated_at  DateTime? @db.DateTime(0)
+  random_code String?   @db.VarChar(21)
+}
+
+model brand_application {
+  id                           Int       @id @default(autoincrement())
+  brand_style                  String?   @db.VarChar(255)
+  brand_name                   String?   @db.VarChar(80)
+  brand_website                String?   @db.VarChar(255)
+  other_sales_channel          String?   @db.VarChar(255)
+  reference_url                String?   @db.VarChar(255)
+  company_introduction         String?   @db.Text
+  company_name                 String?   @db.VarChar(80)
+  business_registration_number String?   @db.VarChar(30)
+  company_address              String?   @db.VarChar(255)
+  number_of_sku                String?   @db.VarChar(80)
+  parellel_import              String?   @db.VarChar(4)
+  wholesale                    String?   @db.VarChar(4)
+  name_person_in_charge        String?   @db.VarChar(80)
+  phone_person_in_charge       String?   @db.VarChar(80)
+  cellphone                    String?   @db.VarChar(80)
+  email_address                String?   @db.VarChar(120)
+  created_at                   DateTime? @db.DateTime(0)
+  agreeto_terms                String?   @db.VarChar(4)
+  agreeto_collecting           String?   @db.VarChar(4)
+  agreeto_policy               String?   @db.VarChar(4)
+  approve_status               Boolean?  @default(false)
+}
+
+model brand_event {
+  event_id                         BigInt    @id @default(autoincrement())
+  brand_id                         BigInt?
+  main_image_directory_original    String?   @db.VarChar(255)
+  main_image_filename_original     String?   @db.VarChar(255)
+  main_image_fullurl_original      String?   @db.VarChar(255)
+  main_image_directory_resized     String?   @db.VarChar(255)
+  main_image_filename_resized      String?   @db.VarChar(255)
+  main_image_fullurl_resized       String?   @db.VarChar(255)
+  subject                          String?   @db.VarChar(255)
+  content                          String?   @db.Text
+  content_image_directory_original String?   @db.VarChar(255)
+  content_image_filename_original  String?   @db.VarChar(255)
+  content_image_fullurl_original   String?   @db.VarChar(255)
+  content_image_directory_resized  String?   @db.VarChar(255)
+  content_image_filename_resized   String?   @db.VarChar(255)
+  content_image_fullurl_resized    String?   @db.VarChar(255)
+  sorting                          Int?
+  active                           Boolean?  @db.Bit(1)
+  created_at                       DateTime? @db.DateTime(0)
+  updated_at                       DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model brand_grade_graph {
+  brand_grade_graph_id           BigInt    @id @default(autoincrement())
+  grade                          String?   @db.VarChar(100)
+  monthly_sales_amount           String?   @db.VarChar(100)
+  monthly_sales_count            String?   @db.VarChar(100)
+  charge_rate                    Float?
+  usage_fee                      String?   @db.VarChar(100)
+  is_deleted                     Boolean?  @db.Bit(1)
+  created_at                     DateTime? @db.DateTime(0)
+  updated_at                     DateTime? @db.DateTime(0)
+  icon_url                       String?   @db.VarChar(255)
+  monthly_sales_amount_condition String?   @db.VarChar(100)
+  monthly_sales_count_condition  Int?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model brand_heart {
+  heart_id   BigInt    @id @default(autoincrement())
+  brand_id   BigInt?
+  member_id  BigInt?
+  is_deleted Boolean?  @db.Bit(1)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+}
+
+model brand_story {
+  story_id   BigInt    @id @default(autoincrement())
+  brand_id   BigInt?
+  subject    String?   @db.VarChar(255)
+  content    String?   @db.Text
+  active     Boolean?  @db.Bit(1)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+}
+
+model brand_story_image {
+  story_image_id                 BigInt    @id @default(autoincrement())
+  story_id                       BigInt?
+  brand_id                       BigInt?
+  brand_story_directory_original String?   @db.VarChar(120)
+  brand_story_filename_original  String?   @db.VarChar(80)
+  brand_story_fullurl_original   String?   @db.VarChar(200)
+  brand_story_directory_resized  String?   @db.VarChar(120)
+  brand_story_filename_resized   String?   @db.VarChar(80)
+  brand_story_fullurl_resized    String?   @db.VarChar(200)
+  sorting                        Int?
+  active                         Boolean?  @db.Bit(1)
+  created_at                     DateTime? @db.DateTime(0)
+  updated_at                     DateTime? @db.DateTime(0)
+}
+
+model color_chart {
+  color_id       Int     @id @default(autoincrement())
+  color_name_eng String? @db.VarChar(100)
+  color_name     String? @db.VarChar(100)
+  hex_code       String? @db.VarChar(30)
+  brand_id       Int?
+}
+
+model comment {
+  comment_id          BigInt    @id @default(autoincrement())
+  created_at          DateTime? @db.DateTime(6)
+  updated_at          DateTime? @db.DateTime(6)
+  child_comment_count Int?
+  content             String?   @db.VarChar(255)
+  is_deleted          Boolean?  @db.Bit(1)
+  feed_id             BigInt?
+  parent_comment_id   BigInt?
+  member_user_id      BigInt?
+  deleted_by          Int?
+  deleted_reason      String?   @db.Text
+
+  @@index([member_user_id], map: "FK2us7k1oh95vedoq33vn1ua65l")
+  @@index([parent_comment_id], map: "FKhvh0e2ybgg16bpu229a5teje7")
+  @@index([feed_id], map: "FKmq57ocw5jrw8rd2lot1g8t0v2")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model coupon {
+  id                    BigInt    @id @default(autoincrement())
+  name                  String?   @db.VarChar(100)
+  discount_type         String?   @db.VarChar(100)
+  discount_rate         Float?
+  start_date            DateTime? @db.DateTime(0)
+  end_date              DateTime? @db.DateTime(0)
+  is_deleted            Boolean?  @db.Bit(1)
+  created_at            DateTime? @db.DateTime(0)
+  updated_at            DateTime? @db.DateTime(0)
+  system_code           String?   @db.VarChar(100)
+  discount_amount       String?   @db.VarChar(100)
+  is_active             Boolean?  @db.Bit(1)
+  period_time           Int?
+  limit_discount_amount String?   @db.VarChar(100)
+  is_auto_apply         Boolean?  @db.Bit(1)
+}
+
+model coupon_descriptions {
+  id          BigInt    @id @default(autoincrement())
+  coupon_id   BigInt?
+  description String?   @db.VarChar(100)
+  is_deleted  Boolean?  @db.Bit(1)
+  sort_order  Int?
+  created_at  DateTime? @db.DateTime(0)
+  updated_at  DateTime? @db.DateTime(0)
+}
+
+model couriers {
+  courier_id   Int     @id @default(autoincrement())
+  courier_name String? @db.VarChar(80)
+  courier_code String? @db.VarChar(80)
+  sorting      Int?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model diary {
+  diary_id     BigInt    @id @default(autoincrement())
+  title        String?   @db.VarChar(100)
+  content      String?   @db.Text
+  is_private   Boolean?  @db.Bit(1)
+  is_deleted   Boolean?  @db.Bit(1)
+  created_at   DateTime? @db.DateTime(0)
+  updated_at   DateTime? @db.DateTime(0)
+  member_id    BigInt?
+  written_date String?   @db.VarChar(100)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model faeferhouse_profile {
+  profile_id         BigInt    @id @default(autoincrement())
+  member_id          BigInt?   @unique(map: "faeferhouse_profile_unique")
+  title              String?   @db.VarChar(100)
+  background_color   String?   @db.VarChar(100)
+  introduce          String?   @db.VarChar(100)
+  today_mood_weather Int?
+  is_deleted         Boolean?  @db.Bit(1)
+  created_at         DateTime? @db.DateTime(0)
+  updated_at         DateTime? @db.DateTime(0)
+  like_count         BigInt?
+}
+
+model faeferhouse_profile_file {
+  file_id    BigInt    @id @default(autoincrement())
+  member_id  BigInt?
+  file_type  String?   @db.VarChar(100)
+  cdn_url    String?   @db.VarChar(200)
+  s3_url     String?   @db.VarChar(200)
+  is_deleted Boolean?  @db.Bit(1)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+  profile_id BigInt?
+}
+
+model faeferhouse_profile_visit {
+  visit_id   BigInt    @id @default(autoincrement())
+  profile_id BigInt?
+  visitor_id BigInt?
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model faq {
+  id              Int?
+  created_at      String? @db.VarChar(50)
+  updated_at      String? @db.VarChar(50)
+  activation      Int?
+  answer          String? @db.VarChar(2048)
+  question        String? @db.VarChar(50)
+  faq_category_id Int?
+  sorting         Int?
+
+  @@ignore
+}
+
+model faq_category {
+  id         BigInt    @id @default(autoincrement())
+  created_at DateTime? @db.DateTime(6)
+  updated_at DateTime? @db.DateTime(6)
+  activation Boolean?  @db.Bit(1)
+  title      String?   @db.VarChar(255)
+  sorting    Int?
+}
+
+model fashion_story {
+  story_id   BigInt    @id @default(autoincrement())
+  member_id  BigInt?
+  title      String?   @db.VarChar(100)
+  content    String?   @db.Text
+  is_deleted Boolean?  @db.Bit(1)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+  views      BigInt?   @db.UnsignedBigInt
+  fixed_at   DateTime? @db.DateTime(0)
+}
+
+model fashion_story_file {
+  file_id    BigInt    @id @default(autoincrement())
+  story_id   BigInt?
+  member_id  BigInt?
+  file_type  String?   @db.VarChar(100)
+  s3_url     String?   @db.VarChar(200)
+  cdn_url    String?   @db.VarChar(200)
+  is_deleted Boolean?  @db.Bit(1)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+}
+
+model fashion_story_item {
+  item_id    BigInt    @id @default(autoincrement())
+  story_id   BigInt?
+  category   String?   @db.VarChar(100)
+  brand      String?   @db.VarChar(100)
+  price      String?   @db.VarChar(100)
+  is_deleted Boolean?  @db.Bit(1)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+  member_id  BigInt?
+  name       String?   @db.VarChar(100)
+}
+
+model fashion_story_view {
+  view_id    BigInt    @id @default(autoincrement())
+  story_id   BigInt?
+  viewer_id  BigInt?
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model feed {
+  id                BigInt    @id @default(autoincrement())
+  created_at        DateTime? @db.DateTime(6)
+  updated_at        DateTime? @db.DateTime(6)
+  comment_count     Int?
+  feed_type         Boolean?  @db.Bit(1)
+  gender            String?   @db.VarChar(255)
+  is_deleted        Boolean?  @db.Bit(1)
+  percent           Float?
+  review            String?   @db.Text
+  short_form_url    String?   @db.VarChar(255)
+  shotform_url      String?   @db.VarChar(255)
+  title             String?   @db.VarChar(255)
+  total_time        Int?
+  member_user_id    BigInt?
+  gender_temp       Int?
+  inactive_reason   String?   @db.VarChar(255)
+  status_changed_by Int?
+  status_changed_at DateTime? @db.DateTime(0)
+  view_count        BigInt?
+  like_count        BigInt?
+  order_count       BigInt?
+
+  @@index([member_user_id], map: "FKfeiqbd4ftrs74j1dvg2pi695u")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model feed_activity {
+  feed_activity_id BigInt    @id @default(autoincrement())
+  activity         String?   @db.VarChar(100)
+  feed_id          BigInt?
+  writer_id        BigInt?
+  is_deleted       Boolean?  @db.Bit(1)
+  created_at       DateTime? @db.DateTime(0)
+  updated_at       DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model feed_clothing_analysis {
+  analysis_id     BigInt    @id @default(autoincrement())
+  feed_file_id    BigInt?
+  category        String?   @db.VarChar(100)
+  fit             String?   @db.VarChar(100)
+  color           String?   @db.VarChar(100)
+  length          String?   @db.VarChar(100)
+  print           String?   @db.VarChar(100)
+  material        String?   @db.VarChar(100)
+  style           String?   @db.VarChar(100)
+  neckline        String?   @db.VarChar(100)
+  sleeve          String?   @db.VarChar(100)
+  created_at      DateTime? @db.DateTime(0)
+  updated_at      DateTime? @db.DateTime(0)
+  detail_category String?   @db.VarChar(100)
+  silhouette      String?   @db.VarChar(100)
+}
+
+model feed_files {
+  id                        BigInt    @id @default(autoincrement())
+  created_at                DateTime? @db.DateTime(6)
+  updated_at                DateTime? @db.DateTime(6)
+  captured_resize_image_url String?   @db.VarChar(255)
+  duration                  String?   @db.VarChar(255)
+  file_type                 Boolean?  @db.Bit(1)
+  image_origin_file_name    String?   @db.Text
+  image_server_file_name    String?   @db.Text
+  image_url                 String?   @db.Text
+  is_deleted                Boolean?  @db.Bit(1)
+  rotation                  Float?
+  thumbnail_url             String?   @db.VarChar(255)
+  feed_id                   BigInt?
+  member_user_id            BigInt?
+  s3_key                    String?   @db.VarChar(255)
+  omnious_key               String?   @db.VarChar(100)
+
+  @@index([member_user_id], map: "FKcwlq030i77it55bonblcssxyr")
+  @@index([feed_id], map: "FKmoiruy0h29n4ijqpqs6478q9n")
+}
+
+model feed_likes {
+  id             BigInt    @id @default(autoincrement())
+  created_at     DateTime? @db.DateTime(6)
+  updated_at     DateTime? @db.DateTime(6)
+  is_deleted     Boolean?  @db.Bit(1)
+  feed_id        BigInt?
+  member_user_id BigInt?
+
+  @@index([feed_id], map: "FK4rsh56cdoxoi5f71i5yf3vfmj")
+  @@index([member_user_id], map: "FKcyufn7mrss2h0484anbo03c69")
+}
+
+model feed_merchs {
+  id              BigInt    @id @default(autoincrement())
+  created_at      DateTime? @db.DateTime(6)
+  updated_at      DateTime? @db.DateTime(6)
+  etc             String?   @db.VarChar(255)
+  feed_id         BigInt?
+  merchandise_id  BigInt?
+  merch_option_id BigInt?
+  is_entrusted    Boolean?  @db.Bit(1)
+  similar_score   Float?
+  member_id       BigInt?
+
+  @@index([feed_id], map: "FK3dl1g8ikah8pw4p664iltgj9x")
+  @@index([merchandise_id], map: "FK7aqilln9o4i7wd3dy5hjcoqqw")
+  @@index([merch_option_id], map: "FKcawyyvrht3opqxhx85xlt961q")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model feed_place {
+  feed_place_id BigInt    @id @default(autoincrement())
+  place         String?   @db.VarChar(100)
+  feed_id       BigInt?
+  writer_id     BigInt?
+  is_deleted    Boolean?  @db.Bit(1)
+  created_at    DateTime? @db.DateTime(0)
+  updated_at    DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model feed_search {
+  search_id    BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  keyword      String?   @db.VarChar(80)
+  feed_id      BigInt?
+  created_by   BigInt?
+  search_count BigInt?
+  created_at   DateTime? @db.DateTime(0)
+  updated_at   DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model feed_season {
+  feed_season_id BigInt    @id @default(autoincrement())
+  season         String?   @db.VarChar(100)
+  feed_id        BigInt?
+  writer_id      BigInt?
+  is_deleted     Boolean?  @db.Bit(1)
+  created_at     DateTime? @db.DateTime(0)
+  updated_at     DateTime? @db.DateTime(0)
+}
+
+model feed_store {
+  id             BigInt    @id @default(autoincrement())
+  created_at     DateTime? @db.DateTime(6)
+  updated_at     DateTime? @db.DateTime(6)
+  is_deleted     Boolean?  @db.Bit(1)
+  feed_id        BigInt?
+  member_user_id BigInt?
+
+  @@index([member_user_id], map: "FK3s5h42xofdkdhb5utcdg3dmrv")
+  @@index([feed_id], map: "FK62qoqy8cmqfhmj1hslbfqytuk")
+}
+
+model feed_styles {
+  id         BigInt    @id @default(autoincrement())
+  created_at DateTime? @db.DateTime(6)
+  updated_at DateTime? @db.DateTime(6)
+  feed_id    BigInt?
+  style_id   BigInt?
+
+  @@index([feed_id], map: "FKgvu87ga01av8vwasjn7j3d86u")
+  @@index([style_id], map: "FKsvj8jjt6ys2jtjhme9uo9b1a0")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model fsmh_event {
+  id         BigInt    @id @default(autoincrement())
+  created_at DateTime? @db.DateTime(6)
+  updated_at DateTime? @db.DateTime(6)
+  content    String?   @db.Text
+  title      String?   @db.VarChar(255)
+}
+
+model main_ad_sentence {
+  id         BigInt    @id @default(autoincrement())
+  sentence   String?   @db.VarChar(100)
+  sorting    Int?
+  is_active  Boolean?  @db.Bit(1)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+  is_deleted Boolean?  @db.Bit(1)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model member_access_log {
+  log_id     BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  member_id  BigInt?
+  ip         String?   @db.VarChar(100)
+  device     String?   @db.VarChar(100)
+  access_at  DateTime? @db.DateTime(0)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model member_account {
+  account_id     BigInt    @id @default(autoincrement())
+  member_id      BigInt?
+  bank           String?   @db.VarChar(100)
+  account_number String?   @db.VarChar(100)
+  account_holder String?   @db.VarChar(100)
+  is_certified   Boolean?  @db.Bit(1)
+  is_deleted     Boolean?  @db.Bit(1)
+  created_at     DateTime? @db.DateTime(0)
+  updated_at     DateTime? @db.DateTime(0)
+}
+
+model member_block {
+  member_block_id    BigInt    @id @default(autoincrement())
+  created_at         DateTime? @db.DateTime(6)
+  updated_at         DateTime? @db.DateTime(6)
+  is_deleted         Boolean?  @db.Bit(1)
+  blocked_member_id  BigInt?
+  blocking_member_id BigInt?
+
+  @@index([blocking_member_id], map: "FK12ouclu775ibxtu6buq6tahpg")
+  @@index([blocked_member_id], map: "FKcsdw4u10sxjhfbk32wslx7kyo")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model member_body_measurement {
+  member_body_measurement_id   BigInt    @id @default(autoincrement())
+  member_id                    BigInt?   @unique(map: "member_body_measurement_unique")
+  shoulder_width               Int?
+  bust_circumference           Int?
+  waist_circumference_at_navel Int?
+  hip_circumference            Int?
+  bust_width                   Int?
+  waist_width                  Int?
+  waist_width_at_navel         Int?
+  hip_width                    Int?
+  back_length                  Int?
+  back_length_at_navel         Int?
+  torso_vertical_length        Int?
+  hip_vertical_length          Int?
+  arm_length                   Int?
+  upper_arm_length             Int?
+  upper_arm_circumference      Int?
+  elbow_circumference          Int?
+  wrist_circumference          Int?
+  knee_height                  Int?
+  thigh_straight_length        Int?
+  thigh_circumference          Int?
+  mid_thigh_circumference      Int?
+  knee_circumference           Int?
+  calf_circumference           Int?
+  minimum_calf_circumference   Int?
+  maximum_ankle_circumference  Int?
+  is_deleted                   Boolean?  @db.Bit(1)
+  created_at                   DateTime? @db.DateTime(0)
+  updated_at                   DateTime? @db.DateTime(0)
+  waist_circumference          Int?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model member_coupons {
+  id           BigInt    @id @default(autoincrement())
+  member_id    BigInt?
+  coupon_id    BigInt?
+  issued_at    DateTime? @db.DateTime(0)
+  used_at      DateTime? @db.DateTime(0)
+  expired_at   DateTime? @db.DateTime(0)
+  is_used      Boolean?  @db.Bit(1)
+  is_deleted   Boolean?  @db.Bit(1)
+  created_at   DateTime? @db.DateTime(0)
+  updated_at   DateTime? @db.DateTime(0)
+  is_expired   Boolean?  @db.Bit(1)
+  phone_number String?   @db.VarChar(100)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model member_follows {
+  id                  BigInt    @id @default(autoincrement())
+  created_at          DateTime? @db.DateTime(6)
+  updated_at          DateTime? @db.DateTime(6)
+  followed_member_id  BigInt?
+  is_deleted          Boolean?  @db.Bit(1)
+  member_user_id      BigInt?
+  size_story_readable Bytes?    @db.Binary(1)
+
+  @@index([member_user_id], map: "FKjqun0bvypxf07134dqirgk1v5")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model member_grade {
+  grade_id                        BigInt    @id @default(autoincrement())
+  name                            String?   @db.VarChar(100)
+  total_purchase_amount_condition String?   @db.VarChar(100)
+  order_lines_condition           Int?
+  feeds_condition                 Int?
+  comments_condition              Int?
+  order_line_charge_rate          Float?
+  purchase_discount_rate          Float?
+  purchase_point_rate             Float?
+  normal_review_point             String?   @db.VarChar(100)
+  photo_review_point              String?   @db.VarChar(100)
+  is_deleted                      Boolean?  @db.Bit(1)
+  created_at                      DateTime? @db.DateTime(0)
+  updated_at                      DateTime? @db.DateTime(0)
+  level                           Int?      @unique(map: "member_grade_unique")
+  english_name                    String?   @db.VarChar(100)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model member_grade_activity {
+  activity_id           BigInt    @id @default(autoincrement())
+  member_id             BigInt?   @unique(map: "member_grade_activity_unique")
+  total_purchase_amount String?   @db.VarChar(100)
+  order_lines           Int?
+  feeds                 Int?
+  comments              Int?
+  is_deleted            Boolean?  @db.Bit(1)
+  created_at            DateTime? @db.DateTime(0)
+  updated_at            DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model member_grade_graph {
+  member_grade_graph_id           BigInt    @id @default(autoincrement())
+  grade                           String?   @db.VarChar(100)
+  grade_condition                 String?   @db.VarChar(100)
+  total_purchase_amount           String?   @db.VarChar(100)
+  purchase_point_rate             Int?
+  normal_review_point             String?   @db.VarChar(100)
+  photo_review_point              String?   @db.VarChar(100)
+  is_deleted                      Boolean?  @db.Bit(1)
+  created_at                      DateTime? @db.DateTime(0)
+  updated_at                      DateTime? @db.DateTime(0)
+  icon_url                        String?   @db.VarChar(255)
+  total_purchase_amount_condition String?   @db.VarChar(100)
+  grade_score_condition           String?   @db.VarChar(100)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model member_notification_setting {
+  notification_setting_id BigInt    @id @default(autoincrement())
+  is_allowed_member       String?   @db.Char(1)
+  is_allowed_creator      String?   @db.Char(1)
+  is_allowed_interest     String?   @db.Char(1)
+  is_allowed_shipment     String?   @db.Char(1)
+  is_allowed_order        String?   @db.Char(1)
+  is_allowed_purchase     String?   @db.Char(1)
+  is_allowed_review       String?   @db.Char(1)
+  is_allowed_brand        String?   @db.Char(1)
+  is_allowed_event        String?   @db.Char(1)
+  is_allowed_information  String?   @db.Char(1)
+  created_at              DateTime? @db.DateTime(0)
+  updated_at              DateTime? @db.DateTime(0)
+  is_deleted              Boolean?  @db.Bit(1)
+  member_id               BigInt?   @unique(map: "member_notification_setting_unique")
+  is_allowed_sms          String?   @db.Char(1)
+  is_allowed_email        String?   @db.Char(1)
+  is_allowed_ad           String?   @db.Char(1)
+}
+
+model member_profile_views {
+  id               BigInt    @id @default(autoincrement())
+  created_at       DateTime? @db.DateTime(6)
+  updated_at       DateTime? @db.DateTime(6)
+  member_id        BigInt?
+  viewed_member_id BigInt?
+
+  @@index([viewed_member_id], map: "FKixm0vux7q52n8b7vy3nno72m1")
+  @@index([member_id], map: "FKln854d5mbfaw4bouyoktnm25l")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model member_shipping {
+  member_shipping_id     BigInt    @id @default(autoincrement())
+  member_id              BigInt?
+  road_address           String?   @db.VarChar(100)
+  detail_address         String?   @db.VarChar(100)
+  recipient_phone_number String?   @db.VarChar(11)
+  shipping_title         String?   @db.VarChar(80)
+  is_deleted             Boolean?  @db.Bit(1)
+  created_at             DateTime? @db.DateTime(0)
+  updated_at             DateTime? @db.DateTime(0)
+  is_default             Boolean?  @db.Bit(1)
+  recipient_name         String?   @db.VarChar(100)
+}
+
+model member_styles {
+  id             BigInt    @id @default(autoincrement())
+  created_at     DateTime? @db.DateTime(6)
+  updated_at     DateTime? @db.DateTime(6)
+  style_id       BigInt?
+  style_title    String?   @db.VarChar(255)
+  member_user_id BigInt?
+  active         Boolean?  @db.Bit(1)
+
+  @@index([member_user_id], map: "FKqjeu1r04m7fw1d8gks43vqsut")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model member_unregister_log {
+  member_unregister_log_id BigInt    @id @default(autoincrement())
+  member_id                BigInt?
+  phone_number             String?   @db.VarChar(20)
+  email                    String?   @db.VarChar(50)
+  reason                   String?   @db.VarChar(100)
+  detail_reason            String?   @db.VarChar(255)
+  created_at               DateTime? @db.DateTime(0)
+  updated_at               DateTime? @db.DateTime(0)
+  is_deleted               Boolean?  @db.Bit(1)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model member_user {
+  id                         BigInt    @id @default(autoincrement())
+  created_at                 DateTime? @db.DateTime(6)
+  updated_at                 DateTime? @db.DateTime(6)
+  account                    String?   @db.VarChar(255)
+  activation                 Boolean?  @db.Bit(1)
+  agree_to_ad                Boolean?  @db.Bit(1)
+  agree_to_email             Boolean?  @db.Bit(1)
+  agree_to_service           Boolean?  @db.Bit(1)
+  agree_to_sms               Boolean?  @db.Bit(1)
+  birth                      Int?
+  birth_layer                Int?
+  body_type                  String?   @db.VarChar(255)
+  bottom                     String?   @db.VarChar(255)
+  chest                      Int?
+  email                      String?   @db.VarChar(255)
+  gender                     String?   @db.VarChar(255)
+  height                     Int?
+  hip                        Int?
+  image_origin_file_name     String?   @db.Text
+  image_server_file_name     String?   @db.Text
+  image_url                  String?   @db.Text
+  intro                      String?   @db.Text
+  join_type                  String?   @db.VarChar(255)
+  name                       String?   @db.VarChar(255)
+  nickname                   String?   @unique(map: "member_user_unique") @db.VarChar(255)
+  password                   String?   @db.VarChar(255)
+  phone_number               String?   @db.VarChar(255)
+  push_token                 String?   @db.Text
+  role                       String?   @db.VarChar(255)
+  shoulder                   Int?
+  top                        String?   @db.VarChar(255)
+  waist                      Int?
+  weight                     Int?
+  grade                      String?   @db.VarChar(100)
+  point                      String?   @db.VarChar(100)
+  grade_score                String?   @db.VarChar(100)
+  total_purchase_amount      String?   @db.VarChar(100)
+  age                        String?   @db.VarChar(100)
+  favorite_fit               String?   @db.VarChar(100)
+  unregister_request_at      DateTime? @db.DateTime(0)
+  leave_request_at           DateTime? @db.DateTime(0)
+  custom_waist               Int?
+  reward                     String?   @db.VarChar(100)
+  grade_level                Int?
+  reason_for_account_block   String?   @db.VarChar(255)
+  reason_for_account_restore String?   @db.VarChar(255)
+  account_blocked_by         Int?
+  account_restored_by        Int?
+
+  @@index([account, join_type], map: "member_user_account_IDX")
+  @@index([nickname], map: "member_user_nickname_IDX")
+}
+
+model merch_body_shape {
+  id             BigInt    @id @default(autoincrement())
+  created_at     DateTime? @db.DateTime(6)
+  updated_at     DateTime? @db.DateTime(6)
+  body_type      String?   @db.VarChar(255)
+  type           Int?
+  merchandise_id BigInt?
+
+  @@index([merchandise_id], map: "FKrhe8ej8bisjao96n20idvotid")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_brand {
+  id                           BigInt    @id @default(autoincrement())
+  created_at                   DateTime? @db.DateTime(6)
+  updated_at                   DateTime? @db.DateTime(6)
+  approved_at                  DateTime? @db.DateTime(0)
+  denied_at                    DateTime? @db.DateTime(0)
+  cancel_contract_at           DateTime? @db.DateTime(0)
+  activation                   Boolean?  @db.Bit(1)
+  honor_brand                  Boolean?  @db.Bit(1)
+  brand_code                   String?   @db.VarChar(255)
+  brand_style                  String?   @db.VarChar(255)
+  image_origin_file_name       String?   @db.VarChar(255)
+  image_server_file_name       String?   @db.VarChar(255)
+  image_url                    String?   @db.VarChar(255)
+  title                        String?   @db.VarChar(255)
+  title_kor                    String?   @db.VarChar(50)
+  company_name_ceo             String?   @db.VarChar(255)
+  business_number              String?   @db.VarChar(255)
+  online_sales_registration    String?   @db.VarChar(255)
+  contact_number               String?   @db.VarChar(255)
+  email                        String?   @db.VarChar(80)
+  website                      String?   @db.VarChar(100)
+  business_location            String?   @db.VarChar(255)
+  created_by                   BigInt?
+  grade                        String?   @db.VarChar(100)
+  contract_period              String?   @db.VarChar(100)
+  brand_type                   Boolean?  @db.Bit(1)
+  monthly_sales_amount         String?   @db.VarChar(100)
+  monthly_sales_count          Int?
+  default_in_charge_of_as      String?   @db.VarChar(100)
+  default_origin               String?   @db.VarChar(100)
+  default_laundry_guide        String?   @db.VarChar(100)
+  default_warranty             String?   @db.VarChar(100)
+  business_bank_account_number String?   @db.VarChar(80)
+  business_bank_internal_code  String?   @db.VarChar(80)
+  heart_count                  BigInt?
+  story_image_url              String?   @db.VarChar(100)
+  line_up_image_url            String?   @db.VarChar(100)
+  event_image_url              String?   @db.VarChar(100)
+  random_code                  String?   @db.VarChar(30)
+  short_description            String?   @db.VarChar(100)
+  company_name_inhouse         String?   @db.VarChar(100)
+  email_inhouse                String?   @db.VarChar(80)
+  contact_number_inhouse       String?   @db.VarChar(50)
+  business_location_inhouse    String?   @db.VarChar(255)
+  ceo_name                     String?   @db.VarChar(80)
+  account_username             String?   @db.VarChar(80)
+  account_password             String?   @db.VarChar(255)
+  reset_time                   DateTime? @db.DateTime(0)
+  reset_random_code            String?   @db.VarChar(10)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_cart {
+  cart_id         BigInt    @id @default(autoincrement())
+  created_at      DateTime? @db.DateTime(6)
+  updated_at      DateTime? @db.DateTime(6)
+  is_deleted      Boolean?  @db.Bit(1)
+  is_purchased    Boolean?  @db.Bit(1)
+  quantity        Int?
+  color_option_id BigInt?
+  member_user_id  BigInt?
+  merchandise_id  BigInt?
+  size_option_id  BigInt?
+  creator_id      BigInt?
+  feed_id         BigInt?
+  order_id        BigInt?
+
+  @@index([member_user_id], map: "FKca9mxh25iy5qw5otgjrjgm31p")
+  @@index([size_option_id], map: "FKdxrvcmlaf5e2nck8d5tdl465v")
+  @@index([color_option_id], map: "FKff0m3eupq0liq21ip2kourhm1")
+  @@index([merchandise_id], map: "FKi0qr6h7854ncvrkc3gucugbg6")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_category {
+  id                     BigInt    @id @default(autoincrement())
+  created_at             DateTime? @db.DateTime(6)
+  updated_at             DateTime? @db.DateTime(6)
+  activation             Boolean?  @db.Bit(1)
+  category_code          String?   @db.VarChar(255)
+  image_origin_file_name String?   @db.VarChar(255)
+  image_server_file_name String?   @db.VarChar(255)
+  image_url              String?   @db.VarChar(255)
+  parent_first           BigInt?
+  parent_second          BigInt?
+  sorting                Int?
+  title                  String?   @db.VarChar(255)
+  category_group         String?   @db.VarChar(30)
+  top_or_bottom          Boolean?
+  fit_view_flag          Boolean?  @db.Bit(1)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_clothing_analysis {
+  analysis_id              BigInt    @id @default(autoincrement())
+  merchandise_id           BigInt?
+  merch_option_id          BigInt?
+  category                 String?   @db.VarChar(100)
+  detail_category          String?   @db.VarChar(100)
+  original_category        String?   @db.VarChar(100)
+  original_detail_category String?   @db.VarChar(100)
+  option_value             String?   @db.VarChar(100)
+  comparing_result         Boolean?  @db.Bit(1)
+  image_url                String?   @db.VarChar(100)
+  fit                      String?   @db.VarChar(100)
+  color                    String?   @db.VarChar(100)
+  length                   String?   @db.VarChar(100)
+  print                    String?   @db.VarChar(100)
+  material                 String?   @db.VarChar(100)
+  style                    String?   @db.VarChar(100)
+  neckline                 String?   @db.VarChar(100)
+  sleeve                   String?   @db.VarChar(100)
+  silhouette               String?   @db.VarChar(100)
+  created_at               DateTime? @db.DateTime(0)
+  updated_at               DateTime? @db.DateTime(0)
+
+  @@index([category, detail_category], map: "merch_clothing_analysis_category_IDX")
+}
+
+model merch_files {
+  id                     BigInt    @id @default(autoincrement())
+  created_at             DateTime? @db.DateTime(6)
+  updated_at             DateTime? @db.DateTime(6)
+  image_origin_file_name String?   @db.VarChar(255)
+  image_server_file_name String?   @db.VarChar(255)
+  image_url              String?   @db.VarChar(255)
+  width                  Int?
+  height                 Int?
+  merchandise_id         BigInt?
+  merchandise_option_id  BigInt?
+  sorting                Int?
+  is_deleted             Int?
+
+  @@index([merchandise_id], map: "FK7pfyj2fk736ki43b2fmra5rfb")
+  @@index([merchandise_option_id], map: "FKcxb52c84f823fy81h7f339hji")
+}
+
+model merch_files_multi_upload {
+  id                        BigInt    @id @default(autoincrement())
+  created_at                DateTime? @db.DateTime(6)
+  updated_at                DateTime? @db.DateTime(6)
+  image_origin_file_name    String?   @db.VarChar(255)
+  image_server_file_name    String?   @db.VarChar(255)
+  image_url                 String?   @db.VarChar(255)
+  merchandise_id            BigInt?
+  merchandise_option_id     BigInt?
+  sorting                   Int?
+  new_merchandise_option_id BigInt?
+
+  @@index([merchandise_id], map: "FK7pfyj2fk736ki43b2fmra5rfb")
+  @@index([merchandise_option_id], map: "FKcxb52c84f823fy81h7f339hji")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_heart {
+  merch_heart_id BigInt    @id @default(autoincrement())
+  merchandise_id BigInt?
+  member_id      BigInt?
+  is_deleted     Boolean?  @db.Bit(1)
+  created_at     DateTime? @db.DateTime(0)
+  updated_at     DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_information {
+  merch_information_id   BigInt   @id @default(autoincrement())
+  as_responsible         String?  @db.VarChar(255)
+  care_instructions      String?  @db.VarChar(255)
+  country_of_manufacture String?  @db.VarChar(255)
+  guarantee_standard     String?  @db.VarChar(255)
+  manufacturer           String?  @db.VarChar(255)
+  manufacturing_date     String?  @db.VarChar(255)
+  product_number         String?  @db.VarChar(255)
+  store_product_number   String?  @db.VarChar(255)
+  merchandise_id         BigInt?
+  fabric                 String?  @db.VarChar(255)
+  stretch                String?  @db.VarChar(32)
+  thickness              String?  @db.VarChar(32)
+  sheerness              String?  @db.VarChar(32)
+  lining                 String?  @db.VarChar(32)
+  fabric_additional_info String?  @db.Text
+  created_at             String?  @db.VarChar(50)
+  updated_at             String?  @db.VarChar(50)
+  description            String?  @db.VarChar(100)
+  is_deleted             Boolean? @db.Bit(1)
+
+  @@index([merchandise_id], map: "FKlcqutsqgpc33kk8pnrett0ljs")
+  @@index([merchandise_id], map: "idx_merchandise_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_information_multi_upload {
+  merch_information_id   BigInt  @id @default(autoincrement())
+  as_responsible         String? @db.VarChar(255)
+  care_instructions      String? @db.VarChar(255)
+  country_of_manufacture String? @db.VarChar(255)
+  guarantee_standard     String? @db.VarChar(255)
+  manufacturer           String? @db.VarChar(255)
+  manufacturing_date     String? @db.VarChar(255)
+  product_number         String? @db.VarChar(255)
+  merchandise_id         BigInt?
+  fabric                 String? @db.VarChar(255)
+  created_at             String? @db.VarChar(50)
+  updated_at             String? @db.VarChar(50)
+  description            String? @db.VarChar(100)
+
+  @@index([merchandise_id], map: "FKlcqutsqgpc33kk8pnrett0ljs")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_laundry {
+  laundry_id     BigInt    @id @default(autoincrement())
+  merchandise_id BigInt?
+  title          String?   @db.VarChar(32)
+  is_deleted     Boolean?  @db.Bit(1)
+  created_at     DateTime? @db.DateTime(0)
+  updated_at     DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_option {
+  id                 BigInt    @id @default(autoincrement())
+  created_at         DateTime? @db.DateTime(6)
+  updated_at         DateTime? @db.DateTime(6)
+  shoulder_size      Float?
+  chest_size         Float?
+  waist_size         Float?
+  hip_size           Float?
+  thigh_size         Float?
+  tailedge_size      Float?
+  crotch_size        Float?
+  sleevelength_size  Float?
+  length_size        Float?
+  length_size_bottom Float?
+  image_url          String?   @db.VarChar(255)
+  color_chip_code    String?   @db.VarChar(20)
+  is_deleted         Boolean?  @db.Bit(1)
+  option_type        String?   @db.VarChar(255)
+  quantity           Int?
+  sort_order         Int?
+  value              String?   @db.VarChar(255)
+  merchandise_id     BigInt?
+  parent_option_id   BigInt?
+  store_price        String?   @db.VarChar(255)
+  regular_price      Float?
+  price              String?   @db.VarChar(50)
+  weight             String?   @db.VarChar(50)
+  is_sales           Boolean?  @db.Bit(1)
+  length_top         Float?
+  length_bottom      Float?
+
+  @@index([parent_option_id], map: "FK8dw812gwg7av6pk2bv6jpv7jl")
+  @@index([merchandise_id], map: "FKex5hxkol8kdkuwg8774niee08")
+  @@index([merchandise_id], map: "idx_merchandise_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_option_backup_04172025 {
+  id                 BigInt    @id @default(autoincrement())
+  created_at         DateTime? @db.DateTime(6)
+  updated_at         DateTime? @db.DateTime(6)
+  shoulder_size      Float?
+  chest_size         Float?
+  waist_size         Float?
+  hip_size           Float?
+  thigh_size         Float?
+  tailedge_size      Float?
+  crotch_size        Float?
+  sleevelength_size  Float?
+  length_size        Float?
+  length_size_bottom Float?
+  image_url          String?   @db.VarChar(255)
+  color_chip_code    String?   @db.VarChar(20)
+  is_deleted         Boolean?  @db.Bit(1)
+  option_type        String?   @db.VarChar(255)
+  quantity           Int?
+  sort_order         Int?
+  value              String?   @db.VarChar(255)
+  merchandise_id     BigInt?
+  parent_option_id   BigInt?
+  regular_price      Float?
+  price              String?   @db.VarChar(50)
+  weight             String?   @db.VarChar(50)
+  is_sales           Boolean?  @db.Bit(1)
+  length_top         Float?
+  length_bottom      Float?
+
+  @@index([parent_option_id], map: "FK8dw812gwg7av6pk2bv6jpv7jl")
+  @@index([merchandise_id], map: "FKex5hxkol8kdkuwg8774niee08")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_option_multi_upload {
+  id                  BigInt    @id @default(autoincrement())
+  created_at          DateTime? @db.DateTime(6)
+  updated_at          DateTime? @db.DateTime(6)
+  shoulder_size       Float?
+  chest_size          Float?
+  waist_size          Float?
+  hip_size            Float?
+  thigh_size          Float?
+  tailedge_size       Float?
+  crotch_size         Float?
+  sleevelength_size   Float?
+  length_size         Float?
+  image_url           String?   @db.VarChar(255)
+  is_deleted          Boolean?  @db.Bit(1)
+  option_type         String?   @db.VarChar(255)
+  quantity            Int?
+  sort_order          Int?
+  value               String?   @db.VarChar(255)
+  merchandise_id      BigInt?
+  parent_option_id    BigInt?
+  color_chip_code     String?   @db.VarChar(16)
+  regular_price       Float?
+  price               String?   @db.VarChar(50)
+  weight              String?   @db.VarChar(50)
+  is_sales            Boolean?  @db.Bit(1)
+  new_merch_option_id Int?
+
+  @@index([parent_option_id], map: "FK8dw812gwg7av6pk2bv6jpv7jl")
+  @@index([merchandise_id], map: "FKex5hxkol8kdkuwg8774niee08")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_option_test {
+  id                 BigInt    @id @default(autoincrement())
+  created_at         DateTime? @db.DateTime(6)
+  updated_at         DateTime? @db.DateTime(6)
+  shoulder_size      Float?
+  chest_size         Float?
+  waist_size         Float?
+  hip_size           Float?
+  thigh_size         Float?
+  tailedge_size      Float?
+  crotch_size        Float?
+  sleevelength_size  Float?
+  length_size        Float?
+  length_size_bottom Float?
+  image_url          String?   @db.VarChar(255)
+  color_chip_code    String?   @db.VarChar(20)
+  is_deleted         Boolean?  @db.Bit(1)
+  option_type        String?   @db.VarChar(255)
+  quantity           Int?
+  sort_order         Int?
+  value              String?   @db.VarChar(255)
+  merchandise_id     BigInt?
+  parent_option_id   BigInt?
+  regular_price      Float?
+  price              String?   @db.VarChar(50)
+  weight             String?   @db.VarChar(50)
+  is_sales           Boolean?  @db.Bit(1)
+  length_top         Float?
+  length_bottom      Float?
+
+  @@index([parent_option_id], map: "FK8dw812gwg7av6pk2bv6jpv7jl")
+  @@index([merchandise_id], map: "FKex5hxkol8kdkuwg8774niee08")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_order {
+  order_id             BigInt    @id @default(autoincrement())
+  order_number         String?   @db.VarChar(80)
+  order_payment_id     String?   @unique(map: "order_unique") @db.VarChar(100)
+  orderer_id           BigInt?
+  is_deleted           Boolean?  @db.Bit(1)
+  created_at           DateTime? @db.DateTime(6)
+  updated_at           DateTime? @db.DateTime(6)
+  order_price          String?   @db.VarChar(20)
+  used_point           String?   @db.VarChar(20)
+  orderer_name         String?   @db.VarChar(100)
+  orderer_email        String?   @db.VarChar(100)
+  orderer_phone_number String?   @db.VarChar(100)
+  is_point_only        Boolean?  @db.Bit(1)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_review {
+  review_id                BigInt    @id @default(autoincrement())
+  reviewer_id              BigInt?
+  merchandise_id           BigInt?
+  order_map_merchandise_id BigInt?
+  detail_review            String?   @db.VarChar(500)
+  rate                     Float?
+  size_review              String?   @db.VarChar(100)
+  design_review            String?   @db.VarChar(100)
+  color_review             String?   @db.VarChar(100)
+  shipment_review          String?   @db.VarChar(100)
+  has_photo                String?   @db.Char(1)
+  helpful_count            Int?
+  like_count               Int?
+  is_deleted               Boolean?  @db.Bit(1)
+  created_at               DateTime? @db.DateTime(0)
+  updated_at               DateTime? @db.DateTime(0)
+
+  @@index([merchandise_id], map: "merch_review_merchandise_id_IDX")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_review_helpful {
+  review_helpful_id BigInt    @id @default(autoincrement())
+  review_id         BigInt?
+  reviewer_id       BigInt?
+  helped_member_id  BigInt?
+  is_deleted        Boolean?  @db.Bit(1)
+  created_at        DateTime? @db.DateTime(0)
+  updated_at        DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_review_image {
+  review_image_id    BigInt    @id @default(autoincrement())
+  review_id          BigInt?
+  reviewer_id        BigInt?
+  image_url          String?   @db.VarChar(255)
+  image_cdn_url      String?   @db.VarChar(255)
+  original_file_name String?   @db.VarChar(255)
+  server_file_name   String?   @db.VarChar(255)
+  file_size          Int?
+  is_deleted         Boolean?  @db.Bit(1)
+  created_at         DateTime? @db.DateTime(0)
+  updated_at         DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_review_like {
+  review_like_id  BigInt    @id @default(autoincrement())
+  review_id       BigInt?
+  reviewer_id     BigInt?
+  liked_member_id BigInt?
+  is_deleted      Boolean?  @db.Bit(1)
+  created_at      DateTime? @db.DateTime(0)
+  updated_at      DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merch_search {
+  search_id      BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  keyword        String?   @db.VarChar(80)
+  merchandise_id BigInt?
+  created_by     BigInt?
+  search_count   BigInt?
+  created_at     DateTime? @db.DateTime(0)
+  updated_at     DateTime? @db.DateTime(0)
+}
+
+model merch_store {
+  id             BigInt    @id @default(autoincrement())
+  created_at     DateTime? @db.DateTime(6)
+  updated_at     DateTime? @db.DateTime(6)
+  member_user_id BigInt?
+  merchandise_id BigInt?
+  is_deleted     Boolean?  @db.Bit(1)
+
+  @@index([merchandise_id], map: "FK9kkqk0oatx81kmt0rr5p0n5gl")
+  @@index([member_user_id], map: "FKbcyh4muofp5xln5x5e350nkfc")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merchandise {
+  id                     BigInt    @id @default(autoincrement())
+  created_at             DateTime? @db.DateTime(6)
+  updated_at             DateTime? @db.DateTime(6)
+  activation             Boolean?  @db.Bit(1)
+  store_price            String?   @db.VarChar(255)
+  cost                   String?   @db.VarChar(255)
+  discount               Int?
+  multiupload_activation Boolean?  @db.Bit(1)
+  image_origin_file_name String?   @db.Text
+  image_server_file_name String?   @db.Text
+  image_url              String?   @db.Text
+  details_common_margin  Int?
+  link                   String?   @db.Text
+  price                  String?   @db.VarChar(255)
+  title                  String?   @db.VarChar(255)
+  title_store            String?   @db.VarChar(255)
+  merch_brand_id         BigInt?
+  merch_category_id      BigInt?
+  short_description      String?   @db.Text
+  memo                   String?   @db.VarChar(128)
+  order_count            BigInt?
+  view_count             BigInt?
+  like_count             BigInt?
+  is_sold_out            Boolean?  @db.Bit(1)
+  heart_count            BigInt?   @db.UnsignedBigInt
+
+  @@index([merch_category_id], map: "FKr7kxr1otlevoq8yaojw7vi72n")
+  @@index([merch_brand_id], map: "FKsdpoe4hxf672e0myqbo5qcg5q")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merchandise_details_card {
+  details_card_id       Int       @id @default(autoincrement())
+  merchandise_id        Int?
+  card_type             Boolean?  @db.Bit(1)
+  details_text          String?   @db.VarChar(255)
+  details_image_fullurl String?   @db.VarChar(255)
+  margin_top            Int?
+  alignment             Int?      @db.TinyInt
+  size                  Float?    @db.Float
+  text_bold             Boolean?  @db.Bit(1)
+  text_underline        Boolean?  @db.Bit(1)
+  text_color_code       String?   @db.VarChar(30)
+  random_code           String?   @db.VarChar(30)
+  sorting               Int?
+  updated_at            DateTime? @db.DateTime(0)
+  created_at            DateTime? @db.DateTime(0)
+}
+
+model merchandise_details_image_url {
+  details_code_id       Int       @id @default(autoincrement())
+  merchandise_id        Int?
+  details_image_fullurl String?   @db.VarChar(120)
+  updated_at            DateTime? @db.DateTime(0)
+  created_at            DateTime? @db.DateTime(0)
+  sorting               Int?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merchandise_multi_upload {
+  id                     BigInt    @id @default(autoincrement())
+  created_at             DateTime? @db.DateTime(6)
+  updated_at             DateTime? @db.DateTime(6)
+  activation             Boolean?  @db.Bit(1)
+  cost                   String?   @db.VarChar(255)
+  discount               Int?
+  multiupload_activation Boolean?  @db.Bit(1)
+  image_origin_file_name String?   @db.Text
+  image_server_file_name String?   @db.Text
+  image_url              String?   @db.Text
+  link                   String?   @db.Text
+  price                  String?   @db.VarChar(255)
+  title                  String?   @db.VarChar(255)
+  merch_brand_id         BigInt?
+  merch_category_id      BigInt?
+  short_description      String?   @db.Text
+  memo                   String?   @db.VarChar(128)
+  new_merchandise_id     Int?
+
+  @@index([merch_category_id], map: "FKr7kxr1otlevoq8yaojw7vi72n")
+  @@index([merch_brand_id], map: "FKsdpoe4hxf672e0myqbo5qcg5q")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merchandise_tag {
+  tag_id          BigInt    @id @default(autoincrement())
+  product_id      String?   @db.VarChar(100)
+  category        String?   @db.VarChar(100)
+  fsmh_category   String?   @db.VarChar(100)
+  color           String?   @db.VarChar(100)
+  detail          String?   @db.VarChar(100)
+  image_url       String?   @db.VarChar(255)
+  fit             String?   @db.VarChar(100)
+  item            String?   @db.VarChar(100)
+  length          String?   @db.VarChar(100)
+  look            String?   @db.VarChar(100)
+  neck_line       String?   @db.VarChar(100)
+  print           String?   @db.VarChar(100)
+  shape           String?   @db.VarChar(100)
+  sleeve_length   String?   @db.VarChar(100)
+  texture         String?   @db.VarChar(100)
+  merch_option_id BigInt?
+  created_at      DateTime? @db.DateTime(0)
+  updated_at      DateTime? @db.DateTime(0)
+  is_deleted      Boolean?  @db.Bit(1)
+  merchandise_id  BigInt?
+  collar_shape    String?   @db.VarChar(100)
+  shoulder_shape  String?   @db.VarChar(100)
+  random_code     String?   @db.VarChar(30)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model merchandise_tag_multi_upload {
+  tag_id          BigInt    @id @default(autoincrement())
+  product_id      String?   @db.VarChar(100)
+  category        String?   @db.VarChar(100)
+  fsmh_category   String?   @db.VarChar(100)
+  color           String?   @db.VarChar(100)
+  detail          String?   @db.VarChar(100)
+  image_url       String?   @db.VarChar(255)
+  fit             String?   @db.VarChar(100)
+  item            String?   @db.VarChar(100)
+  length          String?   @db.VarChar(100)
+  look            String?   @db.VarChar(100)
+  neck_line       String?   @db.VarChar(100)
+  print           String?   @db.VarChar(100)
+  shape           String?   @db.VarChar(100)
+  sleeve_length   String?   @db.VarChar(100)
+  texture         String?   @db.VarChar(100)
+  merch_option_id BigInt?
+  created_at      DateTime? @db.DateTime(0)
+  updated_at      DateTime? @db.DateTime(0)
+  is_deleted      Boolean?  @db.Bit(1)
+  merchandise_id  BigInt?
+  collar_shape    String?   @db.VarChar(100)
+  shoulder_shape  String?   @db.VarChar(100)
+  random_code     String?   @db.VarChar(30)
+}
+
+model notice {
+  id               BigInt    @id @default(autoincrement())
+  created_at       DateTime? @db.DateTime(6)
+  updated_at       DateTime? @db.DateTime(6)
+  content          String?   @db.Text
+  file_url         String?   @db.Text
+  origin_file_name String?   @db.Text
+  server_file_name String?   @db.Text
+  title            String?   @db.VarChar(255)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model order_cancel {
+  order_cancel_id              BigInt    @id @default(autoincrement())
+  order_id                     BigInt?
+  member_id                    BigInt?
+  order_cancel_type            String?   @db.VarChar(100)
+  cancel_reason                String?   @db.VarChar(100)
+  cancel_solve_type            String?   @db.VarChar(100)
+  is_deleted                   Boolean?  @db.Bit(1)
+  created_at                   DateTime? @db.DateTime(0)
+  updated_at                   DateTime? @db.DateTime(0)
+  refund_price                 String?   @db.VarChar(100)
+  recall_address               String?   @db.VarChar(100)
+  recall_request               String?   @db.VarChar(100)
+  cancel_detail_reason         String?   @db.VarChar(255)
+  order_map_merchandise_id     BigInt?
+  hq_status                    String?   @db.VarChar(30)
+  sent_email_notification_flag Boolean?  @db.Bit(1)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model order_cancel_image {
+  order_cancel_image_id BigInt    @id @default(autoincrement())
+  image_url             String?   @db.VarChar(255)
+  image_cdn_url         String?   @db.VarChar(255)
+  original_file_name    String?   @db.VarChar(255)
+  server_file_name      String?   @db.VarChar(255)
+  file_size             Int?
+  is_deleted            Boolean?  @db.Bit(1)
+  created_at            DateTime? @db.DateTime(0)
+  updated_at            DateTime? @db.DateTime(0)
+  order_cancel_id       BigInt?
+}
+
+model order_cancel_memo {
+  id              Int       @id @default(autoincrement())
+  order_cancel_id Int?
+  memo            String?   @db.Text
+  created_at      DateTime? @db.DateTime(0)
+  created_by      Int?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model order_line_creator {
+  order_line_creator_id    BigInt    @id @default(autoincrement())
+  merchandise_id           BigInt?
+  order_map_merchandise_id BigInt?
+  amount                   String?   @db.VarChar(100)
+  orderer_id               BigInt?
+  creator_id               BigInt?
+  reward_grade_at          DateTime? @db.DateTime(0)
+  is_deleted               Boolean?  @db.Bit(1)
+  created_at               DateTime? @db.DateTime(0)
+  updated_at               DateTime? @db.DateTime(0)
+  brand_id                 BigInt?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model order_map_merchandise {
+  order_map_merchandise_id     BigInt    @id @default(autoincrement())
+  order_id                     BigInt?
+  merchandise_id               BigInt?
+  color_option_id              BigInt?
+  size_option_id               BigInt?
+  orderer_id                   BigInt?
+  is_deleted                   Boolean?  @db.Bit(1)
+  created_at                   DateTime? @db.DateTime(0)
+  updated_at                   DateTime? @db.DateTime(0)
+  cancel_confirmed_at          DateTime? @db.DateTime(0)
+  order_confirmed_at           DateTime? @db.DateTime(0)
+  order_price                  String?   @db.VarChar(80)
+  merchandise_price            String?   @db.VarChar(100)
+  quantity                     Int?
+  color_value                  String?   @db.VarChar(100)
+  size_value                   String?   @db.VarChar(100)
+  creator_id                   BigInt?
+  order_status                 String?   @db.VarChar(100)
+  confirmed_at                 DateTime? @db.DateTime(0)
+  brand_id                     BigInt?
+  point_grade_at               DateTime? @db.DateTime(0)
+  feed_id                      BigInt?
+  sent_email_notification_flag Boolean?  @db.Bit(1)
+  accounting_confirm           Boolean?  @db.Bit(1)
+  accounting_confirmed_at      DateTime? @db.DateTime(0)
+  member_coupons_id            BigInt?
+  package_number               String?   @db.VarChar(255)
+  purchase_order_status        Boolean?  @db.Bit(1)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model payment {
+  payment_id     BigInt    @id @default(autoincrement())
+  payer_id       BigInt?
+  result_code    String?   @db.VarChar(100)
+  result_msg     String?   @db.VarChar(100)
+  tid            String?   @db.VarChar(100)
+  cancelled_tid  String?   @db.VarChar(100)
+  payment_status String?   @db.VarChar(100)
+  pay_method     String?   @db.VarChar(100)
+  amount         String?   @db.VarChar(100)
+  approve_no     String?   @db.VarChar(100)
+  is_deleted     Boolean?  @db.Bit(1)
+  created_at     DateTime? @db.DateTime(0)
+  updated_at     DateTime? @db.DateTime(0)
+  order_id       BigInt?
+  card_name      String?   @db.VarChar(100)
+  card_code      String?   @db.VarChar(100)
+  card_no        String?   @db.VarChar(100)
+  easy_pay       String?   @db.VarChar(100)
+  bank_code      String?   @db.VarChar(100)
+  bank_name      String?   @db.VarChar(100)
+  cancel_amount  String?   @db.VarChar(100)
+  moid           String?   @db.VarChar(100)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model play_game {
+  id         BigInt    @id @default(autoincrement())
+  title      String?   @db.VarChar(100)
+  code       String?   @db.VarChar(100)
+  is_deleted Boolean?  @db.Bit(1)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model play_level_rewards {
+  id          BigInt    @id @default(autoincrement())
+  reward_type String?   @db.VarChar(100)
+  coupon_id   BigInt?
+  point       String?   @db.VarChar(100)
+  is_deleted  Boolean?  @db.Bit(1)
+  created_at  DateTime? @db.DateTime(0)
+  updated_at  DateTime? @db.DateTime(0)
+  level       Int?
+  round       Int?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model play_member_games {
+  id         BigInt    @id @default(autoincrement())
+  member_id  BigInt?
+  game_id    BigInt?
+  is_deleted Boolean?  @db.Bit(1)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+  score      Int?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model play_member_level_records {
+  id             BigInt    @id @default(autoincrement())
+  member_id      BigInt?
+  cleared_at     DateTime? @db.DateTime(0)
+  is_deleted     Boolean?  @db.Bit(1)
+  created_at     DateTime? @db.DateTime(0)
+  updated_at     DateTime? @db.DateTime(0)
+  show_animation Boolean?  @db.Bit(1)
+  round          Int?
+  level          Int?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model play_member_level_reward_history {
+  id              BigInt    @id @default(autoincrement())
+  member_id       BigInt?
+  is_deleted      Boolean?  @db.Bit(1)
+  created_at      DateTime? @db.DateTime(0)
+  updated_at      DateTime? @db.DateTime(0)
+  level_reward_id BigInt?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model play_member_round_records {
+  id         BigInt    @id @default(autoincrement())
+  member_id  BigInt?
+  cleared_at DateTime? @db.DateTime(0)
+  is_deleted Boolean?  @db.Bit(1)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+  round      Int?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model play_member_round_reward_history {
+  id              BigInt    @id @default(autoincrement())
+  member_id       BigInt?
+  is_deleted      Boolean?  @db.Bit(1)
+  created_at      DateTime? @db.DateTime(0)
+  updated_at      DateTime? @db.DateTime(0)
+  round_reward_id BigInt?
+}
+
+model play_play_games {
+  id         BigInt    @id @default(autoincrement())
+  round      Int?
+  level      Int?
+  game_id    Int?
+  score      Int?
+  is_deleted Boolean?  @db.Bit(1)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+}
+
+model play_round {
+  id         BigInt    @id @default(autoincrement())
+  title      String?   @db.VarChar(100)
+  is_deleted Boolean?  @db.Bit(1)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+  round      Int?
+}
+
+model play_round_levels {
+  id         BigInt    @id @default(autoincrement())
+  round      Int?
+  level      Int?
+  title      String?   @db.VarChar(100)
+  is_deleted Boolean?  @db.Bit(1)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model play_round_rewards {
+  id          BigInt    @id @default(autoincrement())
+  reward_type String?   @db.VarChar(100)
+  coupon_id   BigInt?
+  point       String?   @db.VarChar(100)
+  is_deleted  Boolean?  @db.Bit(1)
+  created_at  DateTime? @db.DateTime(0)
+  updated_at  DateTime? @db.DateTime(0)
+  round       Int?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model point_history {
+  point_history_id BigInt    @id @default(autoincrement())
+  member_id        BigInt?
+  point            String?   @db.VarChar(100)
+  type             String?   @db.VarChar(100)
+  detail_content   String?   @db.VarChar(100)
+  is_deleted       Boolean?  @db.Bit(1)
+  created_at       DateTime? @db.DateTime(0)
+  updated_at       DateTime? @db.DateTime(0)
+  action           String?   @db.VarChar(100)
+  order_id         BigInt?
+}
+
+model policy {
+  id              BigInt    @id @default(autoincrement())
+  created_at      DateTime? @db.DateTime(6)
+  updated_at      DateTime? @db.DateTime(6)
+  content         String?   @db.Text
+  policy_category Int?
+  title           String?   @db.VarChar(255)
+  type            String?   @db.VarChar(100)
+}
+
+model popup {
+  id                     BigInt    @id @default(autoincrement())
+  created_at             DateTime? @db.DateTime(6)
+  updated_at             DateTime? @db.DateTime(6)
+  activation             Boolean?  @db.Bit(1)
+  end_date               DateTime? @db.DateTime(6)
+  image_origin_file_name String?   @db.Text
+  image_server_file_name String?   @db.Text
+  image_url              String?   @db.Text
+  link                   String?   @db.VarChar(255)
+  start_date             DateTime? @db.DateTime(6)
+  title                  String?   @db.VarChar(255)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model profile_heart {
+  heart_id   BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  profile_id BigInt?
+  member_id  BigInt?
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+
+  @@unique([member_id, profile_id], map: "profile_heart_unique")
+}
+
+model profile_map_stickers {
+  map_id     BigInt    @id @default(autoincrement())
+  profile_id BigInt?
+  sticker_id BigInt?
+  member_id  BigInt?
+  width      Float?
+  height     Float?
+  x          Float?
+  y          Float?
+  rotation   Float?
+  scale      Float?
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+  is_deleted Boolean?  @db.Bit(1)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model profile_stickers {
+  profile_sticker_id BigInt    @id @default(autoincrement())
+  profile_id         BigInt?
+  sticker_id         BigInt?
+  is_deleted         Boolean?  @db.Bit(1)
+  created_at         DateTime? @db.DateTime(0)
+  updated_at         DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model report {
+  report_id          BigInt    @id @default(autoincrement())
+  created_at         DateTime? @db.DateTime(6)
+  updated_at         DateTime? @db.DateTime(6)
+  additional_message String?   @db.VarChar(255)
+  content_id         BigInt?
+  content_type       String?   @db.VarChar(255)
+  is_deleted         Boolean?  @db.Bit(1)
+  reported_member_id BigInt?
+  status             String?   @db.VarChar(255)
+  report_type        String?   @db.VarChar(255)
+  reporter_member_id BigInt?
+  report_status      Int?      @default(0) @db.TinyInt
+  answer             String?   @db.Text
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model reward_history {
+  reward_history_id        BigInt    @id @default(autoincrement())
+  creator_id               BigInt?
+  order_map_merchandise_id BigInt?   @unique(map: "reward_history_unique")
+  merchandise_amount       String?   @db.VarChar(100)
+  reward                   String?   @db.VarChar(100)
+  charge                   Float?
+  is_deleted               Boolean?  @db.Bit(1)
+  created_at               DateTime? @db.DateTime(0)
+  updated_at               DateTime? @db.DateTime(0)
+  charge_explanation       String?   @db.VarChar(100)
+}
+
+model rolling_paper {
+  paper_id       BigInt    @id @default(autoincrement())
+  from_member_id BigInt?
+  to_member_id   BigInt?
+  content        String?   @db.VarChar(500)
+  is_private     Boolean?  @db.Bit(1)
+  is_deleted     Boolean?  @db.Bit(1)
+  created_at     DateTime? @db.DateTime(0)
+  updated_at     DateTime? @db.DateTime(0)
+}
+
+model search_keyword {
+  id               BigInt    @id @default(autoincrement())
+  created_at       DateTime? @db.DateTime(6)
+  updated_at       DateTime? @db.DateTime(6)
+  keyword          BigInt?
+  keyword_category Int?
+  keyword_string   String?   @db.VarChar(255)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model shipment {
+  shipment_id                   BigInt    @id @default(autoincrement())
+  order_id                      BigInt?
+  road_address                  String?   @db.VarChar(100)
+  detail_address                String?   @db.VarChar(100)
+  recipient_name                String?   @db.VarChar(100)
+  recipient_phone_number        String?   @db.VarChar(11)
+  shipping_request              String?   @db.VarChar(100)
+  courier_company               String?   @db.VarChar(80)
+  tracking_number               String?   @db.VarChar(100)
+  shipping_status_hq_only       String?   @db.VarChar(30)
+  shipping_status               String?   @db.VarChar(100)
+  is_deleted                    Boolean?  @db.Bit(1)
+  created_at                    DateTime? @db.DateTime(0)
+  updated_at                    DateTime? @db.DateTime(0)
+  order_map_merchandise_id      BigInt?
+  courier_company_id            String?   @db.VarChar(80)
+  orderer_id                    BigInt?
+  order_confirmed_at            DateTime? @db.DateTime(0)
+  in_transit_at                 DateTime? @db.DateTime(0)
+  delivered_at                  DateTime? @db.DateTime(0)
+  delivery_notification_send_at DateTime? @db.DateTime(0)
+}
+
+model size_story {
+  story_id       BigInt    @id @default(autoincrement())
+  follower_id    BigInt?
+  following_id   BigInt?
+  total_score    Int?
+  height_score   Int?
+  weight_score   Int?
+  shoulder_score Int?
+  chest_score    Int?
+  waist_score    Int?
+  hip_score      Int?
+  scored_at      String?   @db.VarChar(100)
+  is_deleted     Boolean?  @db.Bit(1)
+  created_at     DateTime? @db.DateTime(0)
+  updated_at     DateTime? @db.DateTime(0)
+}
+
+model sms_verification {
+  sms_verification_id BigInt    @id @default(autoincrement())
+  created_at          DateTime? @db.DateTime(6)
+  updated_at          DateTime? @db.DateTime(6)
+  expired_time        DateTime? @db.DateTime(6)
+  is_deleted          Boolean?  @db.Bit(1)
+  number_code         String?   @db.VarChar(255)
+  phone_number        String?   @db.VarChar(255)
+  verification_code   String?   @db.VarChar(255)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model sound_source_log {
+  log_id            BigInt    @id @default(autoincrement())
+  song_id           String?   @db.VarChar(100)
+  title             String?   @db.VarChar(100)
+  album             String?   @db.VarChar(100)
+  artist            String?   @db.VarChar(100)
+  service_type      String?   @db.VarChar(100)
+  feed_file_id      BigInt?
+  created_at        DateTime? @db.DateTime(0)
+  updated_at        DateTime? @db.DateTime(0)
+  feed_id           BigInt?
+  upload_year_month String?   @db.VarChar(100)
+  is_success        Boolean?  @db.Bit(1)
+  fail_log          String?   @db.Text
+  feed_uploader_id  BigInt?
+}
+
+model statistics {
+  id         BigInt    @id @default(autoincrement())
+  created_at DateTime? @db.DateTime(6)
+  updated_at DateTime? @db.DateTime(6)
+  today      DateTime? @db.Date
+  visitors   Int?
+}
+
+model sticker {
+  sticker_id BigInt    @id @default(autoincrement())
+  image_url  String?   @db.VarChar(100)
+  is_deleted Boolean?  @db.Bit(1)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+}
+
+model style {
+  id                     BigInt    @id @default(autoincrement())
+  created_at             DateTime? @db.DateTime(6)
+  updated_at             DateTime? @db.DateTime(6)
+  image_origin_file_name String?   @db.VarChar(255)
+  image_server_file_name String?   @db.VarChar(255)
+  image_url              String?   @db.VarChar(255)
+  title                  String?   @db.VarChar(255)
+  sorting                Int?
+  active                 Boolean?  @db.Bit(1)
+}
+
+model terms {
+  id         BigInt    @id @default(autoincrement())
+  created_at DateTime? @db.DateTime(6)
+  updated_at DateTime? @db.DateTime(6)
+  content    String?   @db.Text
+  title      String?   @db.VarChar(255)
+}
