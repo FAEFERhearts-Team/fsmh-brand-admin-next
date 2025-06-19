@@ -1,8 +1,9 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import dynamic from "next/dynamic";
+import CommentList from "@/components/CommentList";
 import DataTable from "react-data-table-component";
 
 type UserDetail = {
@@ -54,10 +55,13 @@ type FeedItem = {
   videoFilename: string | null;
   creatorNickname: string;
   feedStatus: number;
+  is_deleted: number;
   music_title: string | null;
   music_artist: string | null;
   music_song_id: string | null;
   music_album: string | null;
+  image_server_file_name?: string | null;
+  creatorImageUrl?: string | null;
 };
 
 const VideoPlayer = dynamic(() => import("@/components/VideoPlayer"), { ssr: false });
@@ -235,30 +239,9 @@ interface LikeItem {
 }
 
 // 저장 데이터 타입 정의
-interface SaveItem {
-  fsid: number;
-  fid: number;
-  short_description: string;
-  fTitle: string;
-  fMemberId: number;
-  feed_owner: number;
-  fGender: string;
-  mu_nickname: string;
-  mu_account: string;
-  createdDate: string;
-  updatedDate: string;
-  feedStatus: number;
-}
+// interface SaveItem { ... } // 이 부분 전체 삭제
 
 // 댓글 데이터 타입 정의
-interface CommentItem {
-  cid: number;
-  fTitle: string;
-  mu_nickname: string;
-  mu_account: string;
-  createdDate: string;
-  c_content: string;
-}
 
 // 조회수 데이터 타입 정의
 interface ViewItem {
@@ -268,19 +251,31 @@ interface ViewItem {
   f_view_count: number | null;
 }
 
+
+type ModalComment = {
+  comment_id: number;
+  content: string;
+  parent_comment_id: number | null;
+  created_at: string;
+  member_user_id: number;
+  nickname: string;
+  image_url: string | null; // ensure this field exists for compatibility with CommentList
+  replies: ModalComment[];
+};
+
 export default function UserDetailPage() {
   const { account } = useParams();
+  const [activeTab, setActiveTab] = React.useState(0);
   const [user, setUser] = React.useState<UserDetail | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [activeTab, setActiveTab] = React.useState(0);
   const [startDate, setStartDate] = React.useState('');
   const [endDate, setEndDate] = React.useState('');
+
+  // 피드 관련 상태
   const [feeds, setFeeds] = React.useState<FeedItem[]>([]);
   const [feedsLoading, setFeedsLoading] = React.useState(false);
   const [modalOpen, setModalOpen] = React.useState(false);
   const [modalFeed, setModalFeed] = React.useState<FeedItem | null>(null);
-  const [modalFeedId, setModalFeedId] = React.useState<number | null>(null);
-  const [modalVideoUrl, setModalVideoUrl] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(true);
   const [gradeList, setGradeList] = React.useState<{grade_id:number, name:string}[]>([]);
   const [gradeModalOpen, setGradeModalOpen] = React.useState(false);
@@ -292,16 +287,6 @@ export default function UserDetailPage() {
   const [likesPage, setLikesPage] = React.useState(1);
   const [likesPageSize, setLikesPageSize] = React.useState(PAGE_SIZE_OPTIONS[0]);
   const [likesTotal, setLikesTotal] = React.useState(0);
-  const [saves, setSaves] = React.useState<SaveItem[]>([]);
-  const [savesLoading, setSavesLoading] = React.useState(false);
-  const [savesPage, setSavesPage] = React.useState(1);
-  const [savesPageSize, setSavesPageSize] = React.useState(PAGE_SIZE_OPTIONS[0]);
-  const [savesTotal, setSavesTotal] = React.useState(0);
-  const [comments, setComments] = React.useState<CommentItem[]>([]);
-  const [commentsLoading, setCommentsLoading] = React.useState(false);
-  const [commentsPage, setCommentsPage] = React.useState(PAGE_SIZE_OPTIONS[0]);
-  const [commentsPageSize, setCommentsPageSize] = React.useState(PAGE_SIZE_OPTIONS[0]);
-  const [commentsTotal, setCommentsTotal] = React.useState(0);
   const [views, setViews] = React.useState<ViewItem[]>([]);
   const [viewsLoading, setViewsLoading] = React.useState(false);
   const [viewsPage, setViewsPage] = React.useState(1);
@@ -317,6 +302,32 @@ export default function UserDetailPage() {
   const [unblockModalOpen, setUnblockModalOpen] = React.useState(false);
   const [unblockReason, setUnblockReason] = React.useState("");
   const [showUnblockReasonError, setShowUnblockReasonError] = React.useState(false);
+  const [activationModalOpen, setActivationModalOpen] = useState(false);
+
+  // 댓글 관련 상태 통합 관리
+  const [comments, setComments] = React.useState<ModalComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = React.useState(false);
+  const [commentsError, setCommentsError] = React.useState<string | null>(null);
+  const [commentsPage, setCommentsPage] = React.useState(1);
+  const [commentsTotal, setCommentsTotal] = React.useState(0);
+
+  // 1. 모달 내 댓글 영역 위에 탭 UI 추가
+  // 2. 탭 상태 관리 및 fetchComments 호출 시 tab 파라미터 반영
+  const [commentTab, setCommentTab] = React.useState<'live' | 'deleted'>('live');
+
+  // Add effect to handle body scroll
+  React.useEffect(() => {
+    if (modalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    // Cleanup when component unmounts
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [modalOpen]);
 
   const fetchFeeds = React.useCallback(() => {
     if (activeTab !== 0 || !account) return;
@@ -392,13 +403,15 @@ export default function UserDetailPage() {
     setEndDate(v);
   };
 
-  useEffect(() => {
-    if (!modalFeedId || !modalOpen) { setModalVideoUrl(null); return; }
-    fetch(`/api/feeds/${modalFeedId}/video`)
-      .then(res => res.json())
-      .then(data => setModalVideoUrl(data.url || null))
-      .catch(() => setModalVideoUrl(null));
-  }, [modalFeedId, modalOpen]);
+
+
+  // 댓글 페이지 보정
+  React.useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(commentsTotal / PAGE_SIZE_OPTIONS[0]));
+    if (commentsPage > totalPages) {
+      setCommentsPage(1);
+    }
+  }, [commentsPage, commentsTotal]);
 
   function getGradeName(grade_level: number | null | undefined) {
     if (!grade_level) return '-';
@@ -501,151 +514,40 @@ export default function UserDetailPage() {
     },
   ];
 
-  const fetchSaves = React.useCallback((): void => {
-    if (activeTab !== 2 || !account) return;
-    setSavesLoading(true);
-    const params = [];
-    if (startDate) params.push(`start_date=${startDate}`);
-    if (endDate) params.push(`end_date=${endDate}`);
-    params.push(`page=${savesPage}`);
-    params.push(`pageSize=${savesPageSize}`);
-    const query = params.length ? `?${params.join('&')}` : '';
-    fetch(`/api/users/${account}/saves${query}`)
-      .then(res => res.json())
-      .then(data => {
-        setSaves(data.saves || []);
-        setSavesTotal(data.total || 0);
-        setSavesLoading(false);
-      })
-      .catch(() => {
-        setSaves([]);
-        setSavesTotal(0);
-        setSavesLoading(false);
-      });
-  }, [activeTab, account, startDate, endDate, savesPage, savesPageSize]);
-
-  React.useEffect(() => {
-    if (activeTab !== 2 || !account) return;
-    fetchSaves();
-  }, [activeTab, account, startDate, endDate, savesPage, savesPageSize, fetchSaves]);
-
-  // 저장 페이지 보정
-  React.useEffect(() => {
-    const totalPages = Math.max(1, Math.ceil(savesTotal / savesPageSize));
-    if (savesPage > totalPages) {
-      setSavesPage(1);
-    }
-  }, [savesPage, savesTotal, savesPageSize]);
-
-  const saveColumns = [
-    {
-      name: '#',
-      selector: (row: SaveItem, idx?: number) => savesTotal - ((savesPage - 1) * savesPageSize + (idx ?? 0)),
-      width: '80px',
-      centered: true,
-    },
-    {
-      name: '제목',
-      selector: (row: SaveItem) => row.fTitle,
-      wrap: true,
-      grow: 2,
-      centered: true,
-    },
-    {
-      name: '피드주인',
-      cell: (row: SaveItem) => (
-        <div style={{ minWidth: '120px' }}>
-          <div style={{ fontWeight: 700 }}>{row.mu_nickname}</div>
-          <div style={{ color: '#888', fontSize: 12 }}>{row.mu_account}</div>
-        </div>
-      ),
-      centered: true,
-    },
-    {
-      name: '날짜',
-      selector: (row: SaveItem) => row.createdDate?.slice(0, 10),
-      width: '150px',
-      centered: true,
-    },
-  ];
-
   // 댓글 데이터 fetch 함수
-  const fetchComments = React.useCallback((): void => {
-    if (activeTab !== 3 || !account) return;
-    setCommentsLoading(true);
-    const params = [];
-    params.push(`account=${account}`);
-    if (startDate) params.push(`start_date=${startDate}`);
-    if (endDate) params.push(`end_date=${endDate}`);
-    params.push(`page=${commentsPage}`);
-    params.push(`pageSize=${commentsPageSize}`);
-    const query = params.length ? `?${params.join('&')}` : '';
-    fetch(`/api/users/comments${query}`)
-      .then(res => res.json())
-      .then(data => {
-        console.log('댓글 API 응답:', data);
-        setComments(data.comments || []);
-        setCommentsTotal(data.total || 0);
-        setCommentsLoading(false);
-      })
-      .catch(() => {
-        setComments([]);
-        setCommentsTotal(0);
-        setCommentsLoading(false);
-      });
-  }, [activeTab, account, startDate, endDate, commentsPage, commentsPageSize]);
+  const fetchComments = React.useCallback(async (feedId: number, tab: 'live' | 'deleted' = 'live') => {
+    try {
+      setCommentsLoading(true);
+      setCommentsError(null);
+      const url = `/api/feeds/${feedId}/comment?tab=${tab}`;
+      console.log('fetch URL:', url);
+      const response = await fetch(url);
+      const data = await response.json();
+      setComments(data.comments || []);
+      setCommentsTotal(data.total || 0);
+    } catch (error) {
+      setCommentsError(error instanceof Error ? error.message : '댓글을 불러오는데 실패했습니다.');
+    } finally {
+      setCommentsLoading(false);
+    }
+  }, []);
 
+  // 탭 변경 시 댓글 새로 fetch
   React.useEffect(() => {
-    if (activeTab !== 3 || !account) return;
-    fetchComments();
-  }, [activeTab, account, startDate, endDate, commentsPage, commentsPageSize, fetchComments]);
+    if (modalOpen && modalFeed?.feedId) {
+      fetchComments(modalFeed.feedId, commentTab);
+    }
+  }, [modalOpen, modalFeed, commentTab, fetchComments]);
 
   // 댓글 페이지 보정
   React.useEffect(() => {
-    const totalPages = Math.max(1, Math.ceil(commentsTotal / commentsPageSize));
+    const totalPages = Math.max(1, Math.ceil(commentsTotal / PAGE_SIZE_OPTIONS[0]));
     if (commentsPage > totalPages) {
       setCommentsPage(1);
     }
-  }, [commentsPage, commentsTotal, commentsPageSize]);
+  }, [commentsPage, commentsTotal]);
 
-  const commentColumns = [
-    {
-      name: '#',
-      selector: (row: CommentItem, idx?: number) => commentsTotal - ((commentsPage - 1) * commentsPageSize + (idx ?? 0)),
-      width: '80px',
-      centered: true,
-    },
-    {
-      name: '제목',
-      selector: (row: CommentItem) => row.fTitle,
-      wrap: true,
-      grow: 2,
-      centered: true,
-    },
-    {
-      name: '피드주인',
-      cell: (row: CommentItem) => (
-        <div style={{ minWidth: '120px' }}>
-          <div style={{ fontWeight: 700 }}>{row.mu_nickname}</div>
-          <div style={{ color: '#888', fontSize: 12 }}>{row.mu_account}</div>
-        </div>
-      ),
-      centered: true,
-    },
-    {
-      name: '날짜',
-      selector: (row: CommentItem) => row.createdDate?.slice(0, 10),
-      width: '150px',
-      centered: true,
-    },
-    {
-      name: '댓글내용',
-      selector: (row: CommentItem) => row.c_content,
-      wrap: true,
-      grow: 3,
-      centered: true,
-    },
-  ];
+
 
   React.useEffect(() => {
     if (activeTab === 3) {
@@ -760,6 +662,13 @@ export default function UserDetailPage() {
       setBlockSuccessModalClosing(false);
     }, 400);
   }
+
+  // 모달이 열릴 때 image_server_file_name 콘솔 출력
+  React.useEffect(() => {
+    if (modalOpen && modalFeed) {
+      console.log('image_server_file_name:', modalFeed.image_server_file_name);
+    }
+  }, [modalOpen, modalFeed]);
 
   if (loading) return <div className="p-10">로딩중...</div>;
   if (!user) return <div className="p-10">회원 정보를 찾을 수 없습니다.</div>;
@@ -883,7 +792,9 @@ export default function UserDetailPage() {
                 <div className="text-gray-400 text-center py-8">게시물이 없습니다.</div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                  {feeds.map(feed => (
+                  {feeds.map(feed => {
+                    console.log('Feed status:', { feedId: feed.feedId, is_deleted: feed.is_deleted });
+                    return (
                     <div key={feed.feedId} className="bg-white rounded-xl border border-[#f0f0f0] flex flex-col overflow-hidden">
                       {/* 상단 바 */}
                       <div className="flex flex-row items-center justify-between px-4 pt-4 pb-4">
@@ -902,7 +813,18 @@ export default function UserDetailPage() {
                             width={400}
                             height={400}
                             className="object-cover w-full h-full cursor-pointer"
-                            onClick={() => { setModalFeed(feed); setModalFeedId(feed.feedId); setModalOpen(true); }}
+                            onClick={() => {
+                              fetch(`/api/feeds/${feed.feedId}/video`)
+                                .then(res => res.json())
+                                .then(data => {
+                                  setModalFeed(data.feed || feed);
+                                  setModalOpen(true);
+                                })
+                                .catch(() => {
+                                  setModalFeed(feed);
+                                  setModalOpen(true);
+                                });
+                            }}
                           />
                         ) : (
                           <span className="text-gray-300">No Image</span>
@@ -914,6 +836,14 @@ export default function UserDetailPage() {
                         {feed.shortDescription && (
                           <div className="text-sm text-gray-600 truncate">{feed.shortDescription}</div>
                         )}
+                        {/* 활성화 상태 표시 */}
+                        <div className={`mt-2 inline-block px-2 py-1 rounded-full text-white text-xs font-bold ${
+                          Number(feed.is_deleted) === 1 
+                            ? 'bg-[#e6533c]' 
+                            : 'bg-[#22c58b]'
+                        }`}>
+                          {Number(feed.is_deleted) === 1 ? '비활성화' : '활성화'}
+                        </div>
                       </div>
                       {/* 음원정보 */}
                       <div className="px-4 pb-2 text-xs">
@@ -939,7 +869,8 @@ export default function UserDetailPage() {
                         {/* <span className="flex items-center gap-1"><svg className="w-4 h-4 inline" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-5-7 5V5z" /></svg> 0</span> */}
                       </div>
                     </div>
-                  ))}
+                  );
+                })}
                 </div>
               )
             )}
@@ -967,48 +898,47 @@ export default function UserDetailPage() {
               </div>
             )}
             {activeTab === 2 && (
-              <div className="w-full">
-                <DataTable
-                  columns={saveColumns}
-                  data={saves}
-                  progressPending={savesLoading}
-                  pagination={false}
-                  highlightOnHover
-                  striped
-                  noDataComponent={<div className="py-8">저장 내역이 없습니다.</div>}
-                  keyField="fsid"
-                  customStyles={customStyles}
-                  className="text-center"
-                />
-                <CustomFooter
-                  page={savesPage}
-                  pageSize={savesPageSize}
-                  total={savesTotal}
-                  setPage={setSavesPage}
-                  setPageSize={ps => { setSavesPageSize(ps); setSavesPage(1); }}
+              <div className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold">댓글 목록</h2>
+                  <form onSubmit={handlePeriodSubmit} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={startDate}
+                      onChange={handleStartDateChange}
+                      placeholder="YYYY-MM-DD"
+                      className="border rounded px-2 py-1"
+                    />
+                    <span>~</span>
+                    <input
+                      type="text"
+                      value={endDate}
+                      onChange={handleEndDateChange}
+                      placeholder="YYYY-MM-DD"
+                      className="border rounded px-2 py-1"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-black text-white px-4 py-1 rounded hover:bg-gray-800"
+                    >
+                      조회
+                    </button>
+                  </form>
+                </div>
+
+                <CommentList
+                  comments={comments}
+                  loading={commentsLoading}
+                  error={commentsError}
                 />
               </div>
             )}
             {activeTab === 3 && (
               <div className="w-full">
-                <DataTable
-                  columns={commentColumns}
-                  data={comments}
-                  progressPending={commentsLoading}
-                  pagination={false}
-                  highlightOnHover
-                  striped
-                  noDataComponent={<div className="py-8">댓글 내역이 없습니다.</div>}
-                  keyField="cid"
-                  customStyles={customStyles}
-                  className="text-center"
-                />
-                <CustomFooter
-                  page={commentsPage}
-                  pageSize={commentsPageSize}
-                  total={commentsTotal}
-                  setPage={setCommentsPage}
-                  setPageSize={ps => { setCommentsPageSize(ps); setCommentsPage(1); }}
+                <CommentList
+                  comments={comments}
+                  loading={commentsLoading}
+                  error={commentsError}
                 />
               </div>
             )}
@@ -1135,61 +1065,79 @@ export default function UserDetailPage() {
       </div>
       {modalOpen && modalFeed && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }} onClick={() => { setModalOpen(false); setModalFeed(null); }}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-7xl w-[80vw] h-[870px] flex flex-col overflow-hidden relative" style={{ height: 870 }} onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-7xl w-[80vw] h-[843px] flex flex-col overflow-hidden relative" style={{ height: 843 }} onClick={e => e.stopPropagation()}>
             {/* 상단 초록색 바 */}
-            <div className="w-full h-12 bg-[#22c58b] flex items-center justify-center text-white font-bold text-xl tracking-wide">활성화된 피드</div>
+            <div className={`w-full h-12 ${Number(modalFeed.is_deleted) === 1 ? 'bg-[#e6533c]' : 'bg-[#22c58b]'} flex items-center justify-center text-white font-bold text-xl tracking-wide`}>
+              {Number(modalFeed.is_deleted) === 1 ? '비활성화된 피드' : '활성화된 피드'}
+            </div>
             {/* 본문: 좌(비디오+음원) / 중(상세) / 우(댓글) */}
             <div className="flex flex-1 min-h-0">
               {/* 좌측: 영상 플레이어 + 음원정보 */}
-              <div className="flex flex-col items-center bg-black min-w-[350px] max-w-[350px] w-[350px] h-full py-6 relative">
-                <div className="w-full flex-1 flex flex-col items-center justify-start">
-                  {modalVideoUrl ? (
-                    <>
-                      <div className="w-[350px] h-auto flex items-center justify-center">
-                        <VideoPlayer src={modalVideoUrl} isMuted={isMuted} />
-                      </div>
-                      <button
-                        className="absolute bottom-6 right-6 bg-black bg-opacity-60 rounded-full p-2 text-white hover:bg-opacity-90"
-                        onClick={() => setIsMuted(m => !m)}
-                      >
-                        {isMuted ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 9v6h4l5 5V4l-5 5H9z" />
-                          </svg>
-                        ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 9v6h4l5 5V4l-5 5H9z" />
-                            <line x1="19" y1="5" x2="5" y2="19" stroke="currentColor" strokeWidth="2" />
-                          </svg>
-                        )}
-                      </button>
-                    </>
-                  ) : (
-                    <div className="text-white">영상 없음</div>
-                  )}
-                  {/* 음원정보 */}
-                  <div className="w-full bg-[#f7f7f7] rounded-b-xl p-4 mt-4">
-                    <div className="text-xs text-gray-700 mb-1 font-bold">음원정보(Song ID / 앨범)</div>
-                    <div className="text-xs mb-2">
-                      <span className={modalFeed.music_song_id ? '' : 'text-[#fc0000]'}>{modalFeed.music_song_id || '추출안됨'}</span>
-                      <span> / </span>
-                      <span className={modalFeed.music_album ? '' : 'text-[#fc0000]'}>{modalFeed.music_album || '추출안됨'}</span>
+              <div className="flex flex-col items-center bg-white min-w-[370px] max-w-[370px] w-[370px] h-full relative">
+                {modalFeed?.streamingURL ? (
+                  <div className="flex flex-col w-full">
+                    <div className="w-[370px] h-[659px] overflow-hidden bg-black">
+                      <VideoPlayer src={modalFeed.streamingURL} isMuted={isMuted} />
                     </div>
-                    <div className="text-xs text-gray-700 mb-1 font-bold">음원정보(곡 / 가수)</div>
-                    <div className="text-xs">
-                      <span className={modalFeed.music_title ? '' : 'text-[#fc0000]'}>{modalFeed.music_title || '추출안됨'}</span>
-                      <span> / </span>
-                      <span className={modalFeed.music_artist ? '' : 'text-[#fc0000]'}>{modalFeed.music_artist || '추출안됨'}</span>
+                    <button
+                      className="absolute bottom-[180px] right-6 bg-black bg-opacity-60 rounded-full p-2 text-white hover:bg-opacity-90"
+                      onClick={() => setIsMuted(m => !m)}
+                    >
+                      {isMuted ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="3 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 9v6h4l5 5V4l-5 5H9z" />
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="3 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 9v6h4l5 5V4l-5 5H9z" />
+                          <line x1="19" y1="5" x2="5" y2="19" stroke="currentColor" strokeWidth="2" />
+                        </svg>
+                      )}
+                    </button>
+                    {/* 음원정보 */}
+                    <div className="w-full bg-[#ffffff] p-4">
+                      <div className="text-xs text-gray-700 mb-1 font-bold">음원정보(Song ID / 앨범)</div>
+                      <div className="text-xs mb-2">
+                        <span className={modalFeed.music_song_id ? '' : 'text-[#fc0000]'}>{modalFeed.music_song_id || '추출안됨'}</span>
+                        <span> / </span>
+                        <span className={modalFeed.music_album ? '' : 'text-[#fc0000]'}>{modalFeed.music_album || '추출안됨'}</span>
+                      </div>
+                      <div className="text-xs text-gray-700 mb-1 font-bold">음원정보(곡 / 가수)</div>
+                      <div className="text-xs">
+                        <span className={modalFeed.music_title ? '' : 'text-[#fc0000]'}>{modalFeed.music_title || '추출안됨'}</span>
+                        <span> / </span>
+                        <span className={modalFeed.music_artist ? '' : 'text-[#fc0000]'}>{modalFeed.music_artist || '추출안됨'}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="text-white">영상 없음</div>
+                )}
               </div>
               {/* 중앙: 상세 정보 */}
               <div className="flex-[1.2] flex flex-col p-10 border-l border-[#e0e0e0] bg-white min-w-[350px] max-w-[40%] relative">
-                <button className="absolute top-6 right-6 text-3xl text-gray-400 hover:text-gray-700 z-10" onClick={() => { setModalOpen(false); setModalFeed(null); }}>&times;</button>
+                {/* <button className="absolute top-6 right-6 text-3xl text-gray-400 hover:text-gray-700 z-10" onClick={() => { setModalOpen(false); setModalFeed(null); }}>&times;</button> */}
                 {/* 프로필/날짜 */}
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-xl">{modalFeed.creatorNickname?.[0] || ''}</div>
+                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden text-gray-500 font-bold text-xl">
+                    {modalFeed.creatorImageUrl ? (
+                      <Image
+                        src={modalFeed.creatorImageUrl}
+                        alt={modalFeed.creatorNickname}
+                        width={48}
+                        height={48}
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <Image
+                        src={'/defaultProfilePicture.webp'}
+                        alt={modalFeed.creatorNickname}
+                        width={48}
+                        height={48}
+                        className="object-cover w-full h-full"
+                      />
+                    )}
+                  </div>
                   <div>
                     <div className="font-bold text-gray-800 text-lg">{modalFeed.creatorNickname}</div>
                     <div className="text-xs text-gray-400">업로드 날짜 {modalFeed.createdDate.slice(0, 10)}</div>
@@ -1201,38 +1149,105 @@ export default function UserDetailPage() {
                 <div className="text-gray-700 whitespace-pre-line mb-6 text-base leading-relaxed">{modalFeed.shortDescription || '-'}</div>
                 {/* 구분선 */}
                 <div className="border-b border-[#e0e0e0] my-4" />
-                {/* 상품정보 */}
-                <div className="font-bold text-md mb-2 flex items-center gap-2">상품정보 <span className="text-gray-400 text-lg">ⓘ</span></div>
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-20 h-28 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
-                    <Image
-                      src="https://via.placeholder.com/80x112"
-                      alt="상품"
-                      width={80}
-                      height={112}
-                      className="object-cover w-full h-full"
-                    />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-800 text-base">이온 민소매 데님 롱 원피스</div>
-                    <div className="text-[#2db400] font-bold text-lg">56,000원</div>
-                  </div>
-                </div>
+
                 {/* 하단 버튼 */}
-                <div className="mt-auto flex justify-end">
-                  <button className="bg-[#e6533c] hover:bg-[#d13c1a] text-white font-bold px-8 py-3 rounded-lg shadow text-base">비활성화로 변경</button>
+                <div className="mt-auto flex justify-end gap-3">
+                  <button
+                    onClick={() => {
+                      if (modalFeed.image_server_file_name) {
+                        const fileUrl = `https://d8ym2gq01w74.cloudfront.net/vod/prod/feed/${modalFeed.image_server_file_name}`;
+                        const link = document.createElement('a');
+                        link.href = fileUrl;
+                        link.download = modalFeed.image_server_file_name;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }
+                    }}
+                    className="bg-[#22c58b] hover:bg-[#1ba576] text-white font-bold py-2 px-6 rounded-lg text-sm transition-colors cursor-pointer"
+                    disabled={!modalFeed.image_server_file_name}
+                  >
+                    영상 다운로드
+                  </button>
+                  {Number(modalFeed.is_deleted) === 1 ? (
+                    <button
+                      className="font-bold px-8 py-3 rounded-lg shadow text-base cursor-pointer text-white bg-[rgb(35,183,229)] hover:bg-[rgb(28,146,183)]"
+                      onClick={async () => {
+                        // 활성화로 변경: 무조건 0
+                        console.log('활성화로 변경 클릭, is_deleted: 0');
+                        try {
+                          const res = await fetch(`/api/feeds/${modalFeed.feedId}/activation`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ is_deleted: 0 })
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setActivationModalOpen(false);
+                            setModalFeed(prev => prev ? { ...prev, is_deleted: data.newStatus } : prev);
+                            fetchFeeds();
+                          } else {
+                            alert('상태 변경에 실패했습니다.');
+                          }
+                        } catch {
+                          alert('상태 변경 중 오류가 발생했습니다.');
+                        }
+                      }}
+                    >
+                      활성화로 변경
+                    </button>
+                  ) : (
+                    <button
+                      className="font-bold px-8 py-3 rounded-lg shadow text-base cursor-pointer text-white bg-[#e6533c] hover:bg-[#d13c1a]"
+                      onClick={async () => {
+                        // 비활성화로 변경: 무조건 1
+                        console.log('비활성화로 변경 클릭, is_deleted: 1');
+                        try {
+                          const res = await fetch(`/api/feeds/${modalFeed.feedId}/activation`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ is_deleted: 1 })
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setActivationModalOpen(false);
+                            setModalFeed(prev => prev ? { ...prev, is_deleted: data.newStatus } : prev);
+                            fetchFeeds();
+                          } else {
+                            alert('상태 변경에 실패했습니다.');
+                          }
+                        } catch {
+                          alert('상태 변경 중 오류가 발생했습니다.');
+                        }
+                      }}
+                    >
+                      비활성화로 변경
+                    </button>
+                  )}
                 </div>
               </div>
               {/* 우측: Comments 영역 */}
-              <div className="flex-[0.9] p-10 border-l border-[#e0e0e0] bg-[#fafbfc] flex flex-col min-w-[300px] max-w-[35%]">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="font-bold text-lg text-gray-800">Comments</div>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-[#e6f4f1] text-[#22c58b] px-3 py-1 rounded-full text-xs font-bold">라이브</span>
-                    <button className="text-xs text-gray-400 hover:text-gray-700">삭제</button>
+              <div className="flex-[0.9] border-l border-[#eeeeee] bg-white flex flex-col min-w-[300px] max-w-[35%]">
+                {/* 댓글 헤더 + 탭 */}
+                <div className="flex items-center justify-between px-4 py-3.5 border-b border-[#eeeeee]">
+                  <span className="font-bold text-[15px] text-gray-900">댓글</span>
+                  <div className="flex gap-2">
+                    <button
+                      className={`px-3 py-1 rounded-lg font-bold text-sm ${commentTab === 'live' ? 'bg-[#ede7f6] text-[#7c3aed]' : 'bg-transparent text-gray-700'} cursor-pointer`}
+                      onClick={() => setCommentTab('live')}
+                    >라이브</button>
+                    <button
+                      className={`px-3 py-1 rounded-lg font-bold text-sm ${commentTab === 'deleted' ? 'bg-[#ede7f6] text-[#7c3aed]' : 'bg-transparent text-gray-700'} cursor-pointer`}
+                      onClick={() => setCommentTab('deleted')}
+                    >삭제</button>
                   </div>
                 </div>
-                <div className="flex-1 flex items-center justify-center text-gray-400">댓글 영역 (추후 구현)</div>
+                {/* 댓글 목록 */}
+                <CommentList
+                  comments={comments}
+                  loading={commentsLoading}
+                  error={commentsError}
+                />
               </div>
             </div>
           </div>
@@ -1273,13 +1288,13 @@ export default function UserDetailPage() {
             {/* 버튼 */}
             <div className="flex justify-end gap-3 px-6 pb-4 pt-4 border-t border-gray-200">
               <button
-                className="px-6 py-2 rounded-lg font-bold text-white"
+                className="px-6 py-2 rounded-lg font-bold text-white cursor-pointer"
                 style={{ background: '#2eccaa' }}
                 onClick={handleSaveGrade}
                 disabled={saving || !selectedGrade || selectedGrade === user?.grade_level}
               >{saving ? '변경 중...' : '변경'}</button>
               <button
-                className="px-6 py-2 rounded-lg font-bold text-white"
+                className="px-6 py-2 rounded-lg font-bold text-white cursor-pointer"
                 style={{ background: '#f25c4c' }}
                 onClick={() => setGradeModalOpen(false)}
                 disabled={saving}
@@ -1415,7 +1430,7 @@ export default function UserDetailPage() {
             <div className="px-6 py-8 text-center text-gray-800 text-lg font-semibold">해당 유저가 차단되었습니다</div>
             <div className="flex justify-center gap-3 px-6 pb-6 pt-2">
               <button
-                className="px-8 py-2.5 rounded-lg font-bold text-white text-base"
+                className="px-8 py-2.5 rounded-lg font-bold text-white text-base cursor-pointer"
                 style={{ background: '#22c58b' }}
                 onClick={closeBlockSuccessModalWithAnim}
               >확인</button>
@@ -1423,6 +1438,70 @@ export default function UserDetailPage() {
           </div>
         </div>
       )}
+      {/* 활성화 상태 변경 확인 모달 */}
+      {activationModalOpen && modalFeed && (
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50"
+          style={{ background: 'rgba(0,0,0,0.7)' }}
+          onClick={() => setActivationModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl p-0 min-w-[400px] min-h-[180px] shadow-xl relative border border-gray-200 transition-all duration-400 ease-out transform animate-blockModalIn"
+            onClick={e => e.stopPropagation()}
+            style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.12)' }}
+          >
+            {/* 헤더 */}
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-200">
+              <div className="text-xl font-bold text-gray-800">{Number(modalFeed.is_deleted) === 1 ? '피드 활성화' : '피드 비활성화'}</div>
+              <button className="text-2xl text-gray-400 hover:text-gray-700" onClick={() => setActivationModalOpen(false)}>&times;</button>
+            </div>
+            {/* 안내 문구 */}
+            <div className="px-6 py-6 text-gray-700 text-base">
+              {Number(modalFeed.is_deleted) === 1
+                ? '정말 활성화로 변경하시겠습니까?'
+                : '정말 비활성화로 변경하시겠습니까?'}
+            </div>
+            {/* 버튼 */}
+            <div className="flex justify-end gap-3 px-6 pb-4 pt-2 border-t border-gray-200">
+              <button
+                className="px-6 py-2 rounded-lg font-bold text-white cursor-pointer"
+                style={{ background: '#2eccaa' }}
+                onClick={async () => {
+                  // 버튼 라벨과 실제 토글 동작을 확실히 맞춤
+                  // is_deleted === 1 (비활성화)일 때만 0(활성화)로 변경
+                  if (Number(modalFeed.is_deleted) !== 1) {
+                    alert('이미 활성화 상태입니다.');
+                    return;
+                  }
+                  const newStatus = 0;
+                  console.log('modalFeed.is_deleted:', modalFeed.is_deleted, 'newStatus:', newStatus);
+                  try {
+                    const res = await fetch(`/api/feeds/${modalFeed.feedId}/activation`, {
+                      method: 'PUT'
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      setActivationModalOpen(false);
+                      setModalFeed(prev => prev ? { ...prev, is_deleted: data.newStatus } : prev);
+                      fetchFeeds();
+                    } else {
+                      alert('상태 변경에 실패했습니다.');
+                    }
+                  } catch {
+                    alert('상태 변경 중 오류가 발생했습니다.');
+                  }
+                }}
+              >변경</button>
+              <button
+                className="px-6 py-2 rounded-lg font-bold text-white cursor-pointer"
+                style={{ background: '#f25c4c' }}
+                onClick={() => setActivationModalOpen(false)}
+              >취소</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

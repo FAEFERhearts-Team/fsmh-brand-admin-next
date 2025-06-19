@@ -18,9 +18,9 @@ export async function GET(
     database: process.env.DB_NAME,
   });
 
-  // member_user에서 id를 가져옴
+  // member_user에서 id, nickname, image_url를 가져옴
   const [userRows] = await conn.execute<RowDataPacket[]>(
-    'SELECT id, nickname FROM member_user WHERE account = ? LIMIT 1',
+    'SELECT id, nickname, image_url FROM member_user WHERE account = ? LIMIT 1',
     [account]
   );
   if (!userRows[0]) {
@@ -29,6 +29,7 @@ export async function GET(
   }
   const memberId = userRows[0].id;
   const creatorNickname = userRows[0].nickname;
+  const creatorImageUrl = userRows[0].image_url;
 
   // 기간 조건
   let dateWhere = '';
@@ -47,20 +48,18 @@ export async function GET(
       f.gender AS fGender,
       ff.image_url AS videoURL,
       ff.image_server_file_name AS videoFilename,
-      f.is_deleted AS feedStatus,
+      COALESCE(f.is_deleted, 0) AS is_deleted,
       f.view_count AS f_view_counter,
       f.comment_count AS f_comment_count,
       f.like_count AS f_like_count,
       DATE_FORMAT(f.created_at, '%Y-%m-%d') AS createdDate,
       DATE_FORMAT(f.updated_at, '%Y-%m-%d') AS updatedDate
     FROM 
-      feed f, 
-      feed_files ff
+      feed f
+      LEFT JOIN feed_files ff ON f.id = ff.feed_id AND ff.is_deleted = 0
     WHERE 
-      (ff.image_url like '%m3u8%' OR ff.image_url like '%mp4%') AND 
-      (f.id=ff.feed_id AND f.member_user_id=?) AND  
-      ff.is_deleted=0 AND 
-      f.is_deleted=0
+      f.member_user_id = ? AND
+      (ff.image_url like '%m3u8%' OR ff.image_url like '%mp4%')
       ${dateWhere}
     GROUP BY 
       fid 
@@ -93,8 +92,11 @@ export async function GET(
       totalCommentCount: row.f_comment_count ?? 0,
       streamingURL: row.videoURL,
       videoFilename: row.videoFilename,
+      image_server_file_name: row.videoFilename,
       creatorNickname,
-      feedStatus: row.feedStatus,
+      creatorImageUrl,
+      feedStatus: row.is_deleted,
+      is_deleted: row.is_deleted,
       music_title: music.title ?? null,
       music_artist: music.artist ?? null,
       music_song_id: music.song_id ?? null,

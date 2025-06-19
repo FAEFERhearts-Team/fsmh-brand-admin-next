@@ -36,14 +36,21 @@ export default function VideoPlayer({ src, isMuted = true }: VideoPlayerProps) {
   }, [src, isMuted]);
 
   return (
-    <div className="w-[350px] flex items-center justify-center bg-black">
+    <div className="w-full h-full">
       <video
         ref={videoRef}
-        style={{ width: '350px', height: 'auto', background: 'black' }}
+        className="w-full h-full"
+        style={{
+          objectFit: 'fill',
+          display: 'block',
+          margin: 0,
+          padding: 0
+        }}
         controls={false}
         muted={isMuted}
         autoPlay
         playsInline
+        loop
       />
     </div>
   );
