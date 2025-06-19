@@ -11,6 +11,8 @@ type CommentTree = {
   nickname: string;
   image_url: string | null;
   replies: CommentTree[];
+  feed_id: number;
+  is_deleted: number;
 };
 
 export async function GET(
@@ -43,6 +45,7 @@ export async function GET(
     }
 
     let rows;
+    console.log('Comment API called with tab:', tab);
     if (tab === 'deleted') {
       // 삭제된 댓글 (is_deleted=1 또는 부모가 삭제된 경우)
       [rows] = await conn.execute<RowDataPacket[]>(
@@ -55,7 +58,8 @@ export async function GET(
           mu.nickname,
           mu.image_url,
           c.is_deleted,
-          p.is_deleted as parent_is_deleted
+          p.is_deleted as parent_is_deleted,
+          c.feed_id as feed_id
         FROM comment c
         LEFT JOIN member_user mu ON c.member_user_id = mu.id
         LEFT JOIN comment p ON c.parent_comment_id = p.comment_id
@@ -80,7 +84,8 @@ export async function GET(
           mu.nickname,
           mu.image_url,
           c.is_deleted,
-          p.is_deleted as parent_is_deleted
+          p.is_deleted as parent_is_deleted,
+          c.feed_id as feed_id
         FROM comment c
         LEFT JOIN member_user mu ON c.member_user_id = mu.id
         LEFT JOIN comment p ON c.parent_comment_id = p.comment_id
@@ -117,7 +122,8 @@ export async function GET(
         replies: [],
         created_at: row.created_at || new Date().toISOString(),
         nickname: row.nickname || '알 수 없음',
-        image_url: row.image_url || null
+        image_url: row.image_url || null,
+        is_deleted: row.is_deleted
       };
       commentMap[comment.comment_id] = comment;
     });
@@ -146,5 +152,97 @@ export async function GET(
     if (conn) {
       await conn.end().catch(console.error);
     }
+  }
+}
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: { feedId: string } }
+): Promise<ReturnType<typeof NextResponse.json>> {
+  const { feedId } = params;
+  let conn;
+  try {
+    const { comment_id, content, is_deleted } = await req.json();
+    if (!comment_id || (content === undefined && is_deleted === undefined)) {
+      return NextResponse.json({ success: false, error: 'Invalid input' }, { status: 400 });
+    }
+    conn = await mysql.createConnection({
+      host: process.env.DB_HOST,
+      port: Number(process.env.DB_PORT),
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+    });
+    // 실제로 해당 피드에 속한 댓글인지 확인(보안)
+    const [rows] = await conn.execute<RowDataPacket[]>(
+      'SELECT comment_id FROM comment WHERE comment_id = ? AND feed_id = ?',
+      [comment_id, feedId]
+    );
+    if (!rows[0]) {
+      await conn.end();
+      return NextResponse.json({ success: false, error: '댓글을 찾을 수 없습니다.' }, { status: 404 });
+    }
+
+    if (content !== undefined) {
+      // 댓글 내용 수정
+      await conn.execute(
+        'UPDATE comment SET content = ? WHERE comment_id = ?',
+        [content, comment_id]
+      );
+    }
+
+    if (is_deleted !== undefined) {
+      // 댓글 복구 또는 삭제
+      await conn.execute(
+        'UPDATE comment SET is_deleted = ? WHERE comment_id = ? OR parent_comment_id = ?',
+        [is_deleted, comment_id, comment_id]
+      );
+    }
+
+    await conn.end();
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (conn) await conn.end().catch(() => {});
+    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: { feedId: string } }
+): Promise<ReturnType<typeof NextResponse.json>> {
+  const { feedId } = params;
+  let conn;
+  try {
+    const { comment_id } = await req.json();
+    if (!comment_id) {
+      return NextResponse.json({ success: false, error: 'Invalid input' }, { status: 400 });
+    }
+    conn = await mysql.createConnection({
+      host: process.env.DB_HOST,
+      port: Number(process.env.DB_PORT),
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+    });
+    // 해당 피드에 속한 댓글인지 확인
+    const [rows] = await conn.execute<RowDataPacket[]>(
+      'SELECT comment_id FROM comment WHERE comment_id = ? AND feed_id = ?',
+      [comment_id, feedId]
+    );
+    if (!rows[0]) {
+      await conn.end();
+      return NextResponse.json({ success: false, error: '댓글을 찾을 수 없습니다.' }, { status: 404 });
+    }
+    // 자식댓글까지 모두 삭제 (is_deleted=1)
+    await conn.execute(
+      'UPDATE comment SET is_deleted = 1 WHERE comment_id = ? OR parent_comment_id = ?',
+      [comment_id, comment_id]
+    );
+    await conn.end();
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (conn) await conn.end().catch(() => {});
+    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 } 

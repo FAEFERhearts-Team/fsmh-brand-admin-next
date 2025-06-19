@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -259,9 +259,22 @@ type ModalComment = {
   created_at: string;
   member_user_id: number;
   nickname: string;
-  image_url: string | null; // ensure this field exists for compatibility with CommentList
+  image_url: string | null;
   replies: ModalComment[];
+  is_deleted: number; // 추가
 };
+
+// 상품 정보 타입
+interface FeedMerch {
+  merchandise_id: number;
+  merch_option_id: number | null;
+  name: string;
+  name_kr: string;
+  price: number;
+  thumbnail_url: string;
+  option_name?: string;
+  brand_name?: string;
+}
 
 export default function UserDetailPage() {
   const { account } = useParams();
@@ -314,6 +327,79 @@ export default function UserDetailPage() {
   // 1. 모달 내 댓글 영역 위에 탭 UI 추가
   // 2. 탭 상태 관리 및 fetchComments 호출 시 tab 파라미터 반영
   const [commentTab, setCommentTab] = React.useState<'live' | 'deleted'>('live');
+
+  // 상품 관련 상태
+  const [feedMerchs, setFeedMerchs] = useState<FeedMerch[]>([]);
+  const [feedMerchsLoading, setFeedMerchsLoading] = useState(false);
+  const [deleteMerchModal, setDeleteMerchModal] = useState<{merchandise_id: number, merch_option_id: number | null} | null>(null);
+  const [addMerchModalOpen, setAddMerchModalOpen] = useState(false);
+  const [brandList, setBrandList] = useState<{ id: number; title: string }[]>([]);
+  const [selectedBrand, setSelectedBrand] = useState<number | null>(null);
+  const [categoryList, setCategoryList] = useState<{ id: number; title: string }[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [midCategoryList, setMidCategoryList] = useState<{ id: number; title: string }[]>([]);
+  const [selectedMidCategory, setSelectedMidCategory] = useState<number | null>(null);
+  const [smallCategoryList, setSmallCategoryList] = useState<{ id: number; title: string }[]>([]);
+  const [selectedSmallCategory, setSelectedSmallCategory] = useState<number | null>(null);
+  // 1. 상품 리스트 상태 추가
+  interface MerchItem {
+    id: number;
+    title: string;
+    brand_name: string;
+    price: number;
+    thumbnail_url: string;
+  }
+  const [merchList, setMerchList] = useState<MerchItem[]>([]);
+  const [merchListLoading, setMerchListLoading] = useState(false);
+
+  // Fetch brand list when modal opens
+  useEffect(() => {
+    if (addMerchModalOpen) {
+      fetch('/api/merch_brand?orderBy=title&order=asc')
+        .then(res => res.json())
+        .then(data => setBrandList(data.brands || []));
+    }
+  }, [addMerchModalOpen]);
+
+  // Fetch 대분류 카테고리 when brand is selected
+  useEffect(() => {
+    if (addMerchModalOpen && selectedBrand !== null) {
+      fetch('/api/merch_category?parent_first=null')
+        .then(res => res.json())
+        .then(data => setCategoryList(data.categories || []));
+    }
+  }, [addMerchModalOpen, selectedBrand]);
+
+  // Fetch 중분류 when 대분류 is selected
+  useEffect(() => {
+    if (addMerchModalOpen && selectedCategory !== null) {
+      fetch(`/api/merch_category?parent_first=${selectedCategory}&parent_second=null`)
+        .then(res => res.json())
+        .then(data => setMidCategoryList(data.categories || []));
+    }
+  }, [addMerchModalOpen, selectedCategory]);
+
+  // Fetch 소분류 when 중분류 is selected
+  useEffect(() => {
+    if (addMerchModalOpen && selectedMidCategory !== null) {
+      fetch(`/api/merch_category?parent_second=${selectedMidCategory}`)
+        .then(res => res.json())
+        .then(data => setSmallCategoryList(data.categories || []));
+    }
+  }, [addMerchModalOpen, selectedMidCategory]);
+
+  // 2. 소분류 선택 시 상품 리스트 fetch
+  useEffect(() => {
+    if (addMerchModalOpen && selectedBrand && selectedCategory && selectedMidCategory && selectedSmallCategory) {
+      setMerchListLoading(true);
+      fetch(`/api/merchandise?brand_id=${selectedBrand}&category1=${selectedCategory}&category2=${selectedMidCategory}&category3=${selectedSmallCategory}`)
+        .then(res => res.json())
+        .then(data => setMerchList(data.merchandises || []))
+        .finally(() => setMerchListLoading(false));
+    } else {
+      setMerchList([]);
+    }
+  }, [addMerchModalOpen, selectedBrand, selectedCategory, selectedMidCategory, selectedSmallCategory]);
 
   // Add effect to handle body scroll
   React.useEffect(() => {
@@ -523,7 +609,18 @@ export default function UserDetailPage() {
       console.log('fetch URL:', url);
       const response = await fetch(url);
       const data = await response.json();
-      setComments(data.comments || []);
+      // is_deleted가 누락된 댓글이 있다면 0으로 보정
+      function ensureIsDeletedField(list: unknown[]): ModalComment[] {
+        return list.map((c) => {
+          const comment = c as ModalComment;
+          return {
+            ...comment,
+            is_deleted: typeof comment.is_deleted === 'number' ? comment.is_deleted : 0,
+            replies: comment.replies ? ensureIsDeletedField(comment.replies as unknown[]) : [],
+          };
+        });
+      }
+      setComments(ensureIsDeletedField(data.comments || []));
       setCommentsTotal(data.total || 0);
     } catch (error) {
       setCommentsError(error instanceof Error ? error.message : '댓글을 불러오는데 실패했습니다.');
@@ -669,6 +766,38 @@ export default function UserDetailPage() {
       console.log('image_server_file_name:', modalFeed.image_server_file_name);
     }
   }, [modalOpen, modalFeed]);
+
+  // 피드 모달 열릴 때 상품 정보 fetch
+  useEffect(() => {
+    if (modalOpen && modalFeed?.feedId) {
+      setFeedMerchsLoading(true);
+      fetch(`/api/feeds/${modalFeed.feedId}/merch`)
+        .then(res => res.json())
+        .then(data => setFeedMerchs(data.merchs || []))
+        .catch(() => setFeedMerchs([]))
+        .finally(() => setFeedMerchsLoading(false));
+    } else {
+      setFeedMerchs([]);
+    }
+  }, [modalOpen, modalFeed?.feedId]);
+
+  // 상품 삭제 핸들러
+  const handleDeleteMerch = async (merchandise_id: number, merch_option_id: number | null) => {
+    if (!modalFeed?.feedId) return;
+    if (!window.confirm('정말 상품 연결을 해제하시겠습니까?')) return;
+    await fetch(`/api/feeds/${modalFeed.feedId}/merch`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ merchandise_id, merch_option_id }),
+    });
+    // 삭제 후 다시 fetch
+    setFeedMerchsLoading(true);
+    fetch(`/api/feeds/${modalFeed.feedId}/merch`)
+      .then(res => res.json())
+      .then(data => setFeedMerchs(data.merchs || []))
+      .catch(() => setFeedMerchs([]))
+      .finally(() => setFeedMerchsLoading(false));
+  };
 
   if (loading) return <div className="p-10">로딩중...</div>;
   if (!user) return <div className="p-10">회원 정보를 찾을 수 없습니다.</div>;
@@ -930,6 +1059,19 @@ export default function UserDetailPage() {
                   comments={comments}
                   loading={commentsLoading}
                   error={commentsError}
+                  currentTab={commentTab}
+                  onDelete={() => {
+                    // 댓글 삭제 후 목록 다시 불러오기
+                    if (modalFeed?.feedId) {
+                      fetchComments(modalFeed.feedId, commentTab);
+                    }
+                  }}
+                  onRestore={() => {
+                    // 댓글 복구 후 목록 다시 불러오기
+                    if (modalFeed?.feedId) {
+                      fetchComments(modalFeed.feedId, commentTab);
+                    }
+                  }}
                 />
               </div>
             )}
@@ -939,6 +1081,19 @@ export default function UserDetailPage() {
                   comments={comments}
                   loading={commentsLoading}
                   error={commentsError}
+                  currentTab={commentTab}
+                  onDelete={() => {
+                    // 댓글 삭제 후 목록 다시 불러오기
+                    if (modalFeed?.feedId) {
+                      fetchComments(modalFeed.feedId, commentTab);
+                    }
+                  }}
+                  onRestore={() => {
+                    // 댓글 복구 후 목록 다시 불러오기
+                    if (modalFeed?.feedId) {
+                      fetchComments(modalFeed.feedId, commentTab);
+                    }
+                  }}
                 />
               </div>
             )}
@@ -1065,7 +1220,7 @@ export default function UserDetailPage() {
       </div>
       {modalOpen && modalFeed && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }} onClick={() => { setModalOpen(false); setModalFeed(null); }}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-7xl w-[80vw] h-[843px] flex flex-col overflow-hidden relative" style={{ height: 843 }} onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-7xl w-[80vw] h-[843px] flex flex-col overflow-hidden relative" style={{ height: 843 }} onClick={e => e.stopPropagation()}>
             {/* 상단 초록색 바 */}
             <div className={`w-full h-12 ${Number(modalFeed.is_deleted) === 1 ? 'bg-[#e6533c]' : 'bg-[#22c58b]'} flex items-center justify-center text-white font-bold text-xl tracking-wide`}>
               {Number(modalFeed.is_deleted) === 1 ? '비활성화된 피드' : '활성화된 피드'}
@@ -1149,6 +1304,44 @@ export default function UserDetailPage() {
                 <div className="text-gray-700 whitespace-pre-line mb-6 text-base leading-relaxed">{modalFeed.shortDescription || '-'}</div>
                 {/* 구분선 */}
                 <div className="border-b border-[#e0e0e0] my-4" />
+
+                {/* 상품정보 섹션 (위치 이동) */}
+                <div className="mt-2 mb-6">
+                  <div className="flex items-center mb-2">
+                    <span className="font-bold text-lg">상품정보</span>
+                    <button className="ml-2 text-xl font-bold text-gray-400 hover:text-gray-700 cursor-pointer" onClick={() => setAddMerchModalOpen(true)}>+</button>
+                  </div>
+                  {feedMerchsLoading ? (
+                    <div className="text-gray-400 text-sm py-4">상품 정보를 불러오는 중...</div>
+                  ) : feedMerchs.length === 0 ? (
+                    <div className="text-gray-400 text-sm py-4">연결된 상품이 없습니다</div>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      {feedMerchs.map(merch => (
+                        <div key={merch.merchandise_id + '-' + (merch.merch_option_id ?? 'none')} className="flex items-center gap-4 p-2">
+                          <Image
+                            src={merch.thumbnail_url}
+                            alt={merch.name_kr || merch.name}
+                            width={64}
+                            height={64}
+                            className="w-20 h-20 rounded-lg object-cover"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs text-gray-500 truncate">{merch.brand_name || '-'}</div>
+                            <div className="font-bold text-gray-800 truncate">{merch.name}</div>
+                            {merch.option_name && <div className="text-xs text-gray-500">옵션: {merch.option_name}</div>}
+                            <div className="text-[#22c58b] font-bold">{Number(merch.price).toLocaleString()}원</div>
+                          </div>
+                          <button
+                            className="ml-auto text-gray-400 hover:text-red-500 text-2xl font-bold cursor-pointer"
+                            onClick={() => setDeleteMerchModal({ merchandise_id: merch.merchandise_id, merch_option_id: merch.merch_option_id })}
+                            title="상품 연결 해제"
+                          >×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {/* 하단 버튼 */}
                 <div className="mt-auto flex justify-end gap-3">
@@ -1247,6 +1440,19 @@ export default function UserDetailPage() {
                   comments={comments}
                   loading={commentsLoading}
                   error={commentsError}
+                  currentTab={commentTab}
+                  onDelete={() => {
+                    // 댓글 삭제 후 목록 다시 불러오기
+                    if (modalFeed?.feedId) {
+                      fetchComments(modalFeed.feedId, commentTab);
+                    }
+                  }}
+                  onRestore={() => {
+                    // 댓글 복구 후 목록 다시 불러오기
+                    if (modalFeed?.feedId) {
+                      fetchComments(modalFeed.feedId, commentTab);
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -1498,6 +1704,134 @@ export default function UserDetailPage() {
                 onClick={() => setActivationModalOpen(false)}
               >취소</button>
             </div>
+          </div>
+        </div>
+      )}
+      {deleteMerchModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="bg-white rounded-xl p-6 min-w-[480px] shadow-xl relative flex flex-col items-center">
+            <div className="font-bold text-lg mb-4 text-center">피드에서 상품을 삭제하시겠습니까??</div>
+            <div className="flex gap-4 mt-2">
+              <button
+                className="px-6 py-2 rounded-lg font-bold text-white bg-red-500 hover:bg-red-600 cursor-pointer"
+                onClick={async () => {
+                  await handleDeleteMerch(deleteMerchModal.merchandise_id, deleteMerchModal.merch_option_id);
+                  setDeleteMerchModal(null);
+                }}
+              >삭제</button>
+              <button
+                className="px-6 py-2 rounded-lg font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 cursor-pointer"
+                onClick={() => setDeleteMerchModal(null)}
+              >취소</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {addMerchModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setAddMerchModalOpen(false)}>
+          <div className="bg-white rounded-xl p-8 shadow-xl flex flex-row min-w-[960px] relative" style={{ minWidth: 960, height: '80vh' }} onClick={e => e.stopPropagation()}>
+            {/* 왼쪽 50%: 브랜드/카테고리 선택 */}
+            <div className="flex flex-col w-1/2 pr-8 border-r border-gray-200">
+              <div className="mb-6">
+                <label className="block font-bold mb-2">브랜드 선택</label>
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-[#7c3aed]"
+                  value={selectedBrand ?? ''}
+                  onChange={e => {
+                    setSelectedBrand(e.target.value ? Number(e.target.value) : null);
+                    setSelectedCategory(null);
+                    setSelectedMidCategory(null);
+                    setSelectedSmallCategory(null);
+                  }}
+                >
+                  <option value="">선택하세요</option>
+                  {brandList.map(b => (
+                    <option key={b.id} value={b.id}>{b.title}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-6">
+                <label className="block font-bold mb-2">대분류 카테고리</label>
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-[#7c3aed]"
+                  value={selectedCategory ?? ''}
+                  onChange={e => {
+                    setSelectedCategory(e.target.value ? Number(e.target.value) : null);
+                    setSelectedMidCategory(null);
+                    setSelectedSmallCategory(null);
+                  }}
+                  disabled={selectedBrand === null}
+                >
+                  <option value="">선택하세요</option>
+                  {categoryList.map(c => (
+                    <option key={c.id} value={c.id}>{c.title}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-6">
+                <label className="block font-bold mb-2">중분류 카테고리</label>
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-[#7c3aed]"
+                  value={selectedMidCategory ?? ''}
+                  onChange={e => {
+                    setSelectedMidCategory(e.target.value ? Number(e.target.value) : null);
+                    setSelectedSmallCategory(null);
+                  }}
+                  disabled={selectedCategory === null}
+                >
+                  <option value="">선택하세요</option>
+                  {midCategoryList.map(c => (
+                    <option key={c.id} value={c.id}>{c.title}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-6">
+                <label className="block font-bold mb-2">소분류 카테고리</label>
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-[#7c3aed]"
+                  value={selectedSmallCategory ?? ''}
+                  onChange={e => setSelectedSmallCategory(e.target.value ? Number(e.target.value) : null)}
+                  disabled={selectedMidCategory === null}
+                >
+                  <option value="">선택하세요</option>
+                  {smallCategoryList.map(c => (
+                    <option key={c.id} value={c.id}>{c.title}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {/* 오른쪽 50%: 상품 리스트 */}
+            <div className="flex-1 pl-8 overflow-y-auto">
+              <div className="font-bold text-lg mb-4">상품 리스트</div>
+              {merchListLoading ? (
+                <div className="text-gray-400 text-center py-8">로딩중...</div>
+              ) : merchList.length === 0 ? (
+                <div className="text-gray-400 text-center py-8">해당 카테고리의 상품이 없습니다.</div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {merchList.map(merch => (
+                    <div key={merch.id} className="bg-white rounded-xl border border-[#f0f0f0] flex flex-col overflow-hidden">
+                      <div className="w-full aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
+                        {merch.thumbnail_url ? (
+                          <Image src={merch.thumbnail_url} alt={merch.title} width={400} height={400} className="object-cover w-full h-full" />
+                        ) : (
+                          <span className="text-gray-300">No Image</span>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1 px-4 py-2">
+                        <div className="font-bold text-base text-gray-900 truncate" title={merch.title}>{merch.title}</div>
+                        <div className="text-xs text-gray-500 truncate" title={merch.brand_name}>{merch.brand_name}</div>
+                        <div className="text-[#22c58b] font-bold">{Number(merch.price).toLocaleString()}원</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              className="absolute top-6 right-6 text-3xl text-gray-400 hover:text-gray-700 z-10 cursor-pointer"
+              onClick={() => setAddMerchModalOpen(false)}
+            >&times;</button>
           </div>
         </div>
       )}
